@@ -1,0 +1,30 @@
+{
+  "name": "roadwatch",
+  "version": "1.0.0",
+  "description": "**Track roads. Track accountability.**",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Saloni967/RoadWatch.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Saloni967/RoadWatch/issues"
+  },
+  "homepage": "https://github.com/Saloni967/RoadWatch#readme",
+  "dependencies": {
+    "axios": "^1.15.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "firebase-admin": "^13.8.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
