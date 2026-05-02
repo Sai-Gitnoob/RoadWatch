@@ -115,6 +115,7 @@ The system is designed to integrate real-time official data sources in future.
 * Admin dashboard
 * Predictive maintenance analytics
 * Expansion to multiple cities/countries
+* Added AI chatbot Feature
 
 ---
 
