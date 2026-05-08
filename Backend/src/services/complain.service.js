@@ -9,6 +9,8 @@ exports.createComplaint = async (data) => {
     description: data.description,
     location: data.location,
     userId: data.userId || "anonymous",
+    issueType: data.issueType,
+    severity:data.severity,
     status: "pending",
     createdAt: new Date(),
   };
