@@ -1,7 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const { createComplaint } = require("../controllers/complaints.controller");
+
+const {
+  createComplaint,
+  getComplaints,
+} = require("../controllers/complaints.controller");
 
 router.post("/", createComplaint);
+
+router.get("/", getComplaints);
 
 module.exports = router;
