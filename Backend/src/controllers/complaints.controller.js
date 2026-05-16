@@ -1,46 +1,59 @@
-const { createComplaint: addComplaint } = require("../services/complain.service");
-
 const { db } = require("../config/firebase");
 
+
+// CREATE COMPLAINT
 const createComplaint = async (req, res) => {
   try {
+
     const data = req.body;
 
+    // Validation
     if (!data.description || !data.location) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields",
+        message: "Description and location are required",
       });
     }
 
+    // Complaint Object
     const complaint = {
+      userId: data.userId || "anonymous",
       description: data.description,
       location: data.location,
-      userId: data.userId || "anonymous",
-      issueType: data.issueType,
-      severity: data.severity,
+      issueType: data.issueType || "General",
+      severity: data.severity || "medium",
       status: "pending",
       createdAt: new Date(),
     };
 
+    // Save to Firebase
     const docRef = await db.collection("complaints").add(complaint);
 
     res.status(201).json({
       success: true,
-      id: docRef.id,
+      message: "Complaint created successfully",
+      data: {
+        id: docRef.id,
+        ...complaint,
+      },
     });
+
   } catch (error) {
-    console.error(error);
+
+    console.error("Create Complaint Error:", error);
 
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
 };
 
+
+// GET ALL COMPLAINTS
 const getComplaints = async (req, res) => {
   try {
+
     const snapshot = await db.collection("complaints").get();
 
     const complaints = snapshot.docs.map((doc) => ({
@@ -50,29 +63,31 @@ const getComplaints = async (req, res) => {
 
     res.status(200).json({
       success: true,
+      count: complaints.length,
       data: complaints,
     });
+
   } catch (error) {
-    console.error(error);
+
+    console.error("Get Complaints Error:", error);
 
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
 };
 
-module.exports = {
-  createComplaint,
-  getComplaints,
-};
 
+// GET COMPLAINT BY ID
 const getComplaintById = async (req, res) => {
   try {
+
     const { id } = req.params;
 
     const doc = await db.collection("complaints").doc(id).get();
 
+    // Check if complaint exists
     if (!doc.exists) {
       return res.status(404).json({
         success: false,
@@ -87,55 +102,80 @@ const getComplaintById = async (req, res) => {
         ...doc.data(),
       },
     });
+
   } catch (error) {
+
+    console.error("Get Complaint By ID Error:", error);
+
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
 };
 
-const updateComplaint = async (req, res) => {
-  try {
-    const { id } = req.params;
 
-    await db.collection("complaints").doc(id).update(req.body);
+// UPDATE COMPLAINT STATUS
+const updateComplaintStatus = async (req, res) => {
+  try {
+
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Allowed status values
+    const allowedStatus = [
+      "pending",
+      "in-progress",
+      "resolved",
+    ];
+
+    // Validate status
+    if (!allowedStatus.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status value",
+      });
+    }
+
+    // Check if complaint exists
+    const complaintRef = db.collection("complaints").doc(id);
+
+    const doc = await complaintRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    // Update status
+    await complaintRef.update({
+      status,
+      updatedAt: new Date(),
+    });
 
     res.status(200).json({
       success: true,
-      message: "Complaint updated",
+      message: "Complaint status updated successfully",
     });
+
   } catch (error) {
+
+    console.error("Update Complaint Status Error:", error);
+
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Internal server error",
     });
   }
 };
 
-const deleteComplaint = async (req, res) => {
-  try {
-    const { id } = req.params;
 
-    await db.collection("complaints").doc(id).delete();
-
-    res.status(200).json({
-      success: true,
-      message: "Complaint deleted",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
+// EXPORTS
 module.exports = {
   createComplaint,
   getComplaints,
   getComplaintById,
-  updateComplaint,
-  deleteComplaint,
+  updateComplaintStatus,
 };
-
