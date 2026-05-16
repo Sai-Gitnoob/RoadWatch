@@ -37,3 +37,7 @@ serviceAccountKey.json
 
 coverage/
 node_modules
+
+# Ignore specific documentation and readme files
+Ai workflow.odt
+backendreadme.md
