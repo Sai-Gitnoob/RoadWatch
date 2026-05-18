@@ -1,43 +1,55 @@
-# Node modules
-
+# =========================
+# Node Modules
+# =========================
 node_modules/
 
-# Environment variables
-
+# =========================
+# Environment Variables
+# =========================
 .env
-.env.*
 
+# =========================
+# Firebase Admin SDK Key
+# =========================
+serviceAccountKey.json
+
+# =========================
 # Logs
-
+# =========================
 logs
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# OS files
-
+# =========================
+# OS Files
+# =========================
 .DS_Store
 Thumbs.db
 
+# =========================
 # VS Code
-
+# =========================
 .vscode/
 
-# Build / output
-
+# =========================
+# Build / Dist
+# =========================
 dist/
 build/
 
-# Firebase
+# =========================
+# Temporary Files
+# =========================
+tmp/
+temp/
 
-serviceAccountKey.json
-
-# Coverage
-
+# =========================
+# Coverage Reports
+# =========================
 coverage/
-node_modules
 
-# Ignore specific documentation and readme files
-Ai workflow.odt
-backendreadme.md
+# =========================
+# n8n Workflow Exports
+# (optional)
+# =========================
+*.sqlite
