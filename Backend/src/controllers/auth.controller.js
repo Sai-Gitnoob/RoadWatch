@@ -1,4 +1,8 @@
-const { createUser } = require("../services/auth.service");
+const generateToken = require("../utils/generateToken");
+const {
+  createUser,
+  loginUser,
+} = require("../services/auth.service");
 
 
 const signup = async (req, res) => {
@@ -43,7 +47,59 @@ const signup = async (req, res) => {
   }
 };
 
+const login = async (req, res) => {
+  try {
+
+    const {
+      email,
+      password,
+    } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    const user = await loginUser(
+      email,
+      password
+    );
+
+    // Generate JWT
+    const token = generateToken(user);
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      data: user,
+    });
+
+  } catch (error) {
+
+    console.error("Login Error:", error);
+
+    res.status(401).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+const getCurrentUser = async (req, res) => {
+
+  res.status(200).json({
+    success: true,
+    data: req.user,
+  });
+};
 
 module.exports = {
   signup,
+  login,
+  getCurrentUser,
 };
+

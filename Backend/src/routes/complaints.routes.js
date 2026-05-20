@@ -2,6 +2,10 @@ const express = require("express");
 
 const router = express.Router();
 
+const protect = require("../middleware/auth.middleware");
+
+const adminOnly = require("../middleware/admin.middleware");
+
 const {
   createComplaint,
   getComplaints,
@@ -12,7 +16,7 @@ const {
 
 // CREATE COMPLAINT
 // POST /api/complaints
-router.post("/", createComplaint);
+router.post("/", protect, createComplaint);
 
 
 // GET ALL COMPLAINTS
@@ -27,7 +31,12 @@ router.get("/:id", getComplaintById);
 
 // UPDATE ONLY STATUS
 // PUT /api/complaints/:id/status
-router.put("/:id/status", updateComplaintStatus);
+router.put(
+  "/:id/status",
+  protect,
+  adminOnly,
+  updateComplaintStatus
+);
 
 
 module.exports = router;

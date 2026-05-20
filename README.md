@@ -122,4 +122,3 @@ The system is designed to integrate real-time official data sources in future.
 
 > “RoadWatch transforms fragmented road data into a transparent, accountable system that empowers citizens and improves infrastructure governance.”
 
-
