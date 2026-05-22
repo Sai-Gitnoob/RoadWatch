@@ -6,6 +6,7 @@ const protect = require("../middleware/auth.middleware");
 
 const {
   startSession,
+  sendMessage,
 } = require("../controllers/session.controller");
 
 
@@ -15,6 +16,15 @@ router.post(
   "/start",
   protect,
   startSession
+);
+
+
+// SEND MESSAGE TO SESSION
+// POST /api/session/message
+router.post(
+  "/message",
+  protect,
+  sendMessage
 );
 
 
