@@ -7,6 +7,10 @@ const serviceAccount = require(
   path.join(__dirname, "../../serviceAccountKey.json")
 );
 
+if (serviceAccount.private_key) {
+  serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+}
+
 
 // Prevent Multiple Firebase Initializations
 if (!admin.apps.length) {

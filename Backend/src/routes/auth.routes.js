@@ -8,6 +8,7 @@ const {
   signup,
   login,
   getCurrentUser,
+  getProfile,
 } = require("../controllers/auth.controller");
 
 
@@ -17,5 +18,6 @@ router.post("/signup", signup);
 router.post("/login", login);
 
 router.get("/me", protect, getCurrentUser);
+router.get("/profile", protect, getProfile);
 
 module.exports = router;

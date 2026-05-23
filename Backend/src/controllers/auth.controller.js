@@ -3,6 +3,7 @@ const {
   createUser,
   loginUser,
 } = require("../services/auth.service");
+const { db } = require("../config/firebase");
 
 
 const signup = async (req, res) => {
@@ -97,9 +98,42 @@ const getCurrentUser = async (req, res) => {
   });
 };
 
+const getProfile = async (req, res) => {
+  try {
+    const docRef = db.collection("users").doc(req.user.id);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const userData = docSnap.data();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        name: userData.name || "",
+        email: userData.email || "",
+        dob: userData.dob || "",
+        role: userData.role || "user",
+        uid: userData.uid || "",
+      },
+    });
+  } catch (error) {
+    console.error("Get Profile Error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   signup,
   login,
   getCurrentUser,
+  getProfile,
 };
-
