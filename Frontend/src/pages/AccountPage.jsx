@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  User, Shield, Bell, Settings, LogOut, 
+  User, Bell, Settings, LogOut, 
   ChevronRight, Clock, CheckCircle, FileText, MapPin, Award, Sun, Moon
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
@@ -9,15 +9,14 @@ import { PageContainer } from '../components/layout/PageContainer';
 import { Card, StatCard, PageHeader, SectionHeader, StatusBadge } from '../components/ui';
 
 export default function AccountPage() {
-  const { currentUser, complaints, setNotification, darkMode, toggleDarkMode } = useAppStore();
+  const { currentUser, complaints, setNotification, darkMode, toggleDarkMode, logout } = useAppStore();
   const navigate = useNavigate();
 
-  const userComplaints = complaints.filter(c => c.userId === currentUser.uid);
+  const userComplaints = currentUser ? complaints.filter(c => c.userId === currentUser.uid) : [];
   const resolvedCount = userComplaints.filter(c => c.status === 'resolved').length;
 
   const settingsOptions = [
-    { label: 'Profile Information', icon: User, desc: 'Update your personal details and preferences', action: () => setNotification({ type: 'info', message: 'Profile settings coming soon.' }) },
-    { label: 'Privacy & Security', icon: Shield, desc: 'Manage your password and account security', action: () => setNotification({ type: 'info', message: 'Security settings coming soon.' }) },
+    { label: 'Profile Information', icon: User, desc: 'View your personal details and preferences', action: () => navigate('/profile') },
     { label: darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode', icon: darkMode ? Sun : Moon, desc: darkMode ? 'Currently using Dark Theme' : 'Currently using Light Theme', action: toggleDarkMode },
   ];
 
@@ -29,13 +28,13 @@ export default function AccountPage() {
             whileHover={{ scale: 1.05 }}
             className="w-28 h-28 rounded-full bg-primary flex items-center justify-center text-white text-3xl font-bold shadow-md border-4 border-white"
           >
-            {currentUser.name.charAt(0)}
+            {currentUser?.name?.charAt(0) || 'U'}
           </motion.div>
           <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-success border-2 border-white shadow-sm" />
         </div>
         
         <PageHeader 
-          title={currentUser.name} 
+          title={currentUser?.name || 'User'} 
           subtitle="Verified Mumbai Resident • Active Contributor"
           className="mb-0 items-center text-center"
         />
@@ -67,8 +66,13 @@ export default function AccountPage() {
           </Card>
 
           <button 
-            onClick={() => setNotification({ type: 'info', message: 'Logging out...' })}
-            className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-all shadow-sm"
+            onClick={() => {
+              setNotification({ type: 'info', message: 'Logging out...' });
+              logout();
+              navigate('/login');
+            }}
+            className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border font-bold text-sm transition-all shadow-sm"
+            style={{ backgroundColor: '#ff6666', color: '#fff', borderColor: '#ff6666' }}
           >
             <LogOut size={18} />
             Sign Out

@@ -2,13 +2,29 @@ import { create } from 'zustand';
 
 const useAppStore = create((set) => ({
   // Auth
-  currentUser: {
-    uid: 'demo-user-001',
-    name: 'Saloni Gurav',
-    email: 'saloni@roadwatch.in',
-    avatar: null,
-    joinedDate: '2024-10-01',
+  currentUser: null,
+  token: localStorage.getItem('roadwatch-token') || null,
+  isAuthenticated: !!localStorage.getItem('roadwatch-token'),
+  
+  login: (userData, token) => {
+    localStorage.setItem('roadwatch-token', token);
+    set({
+      currentUser: userData,
+      token: token,
+      isAuthenticated: true
+    });
   },
+  
+  logout: () => {
+    localStorage.removeItem('roadwatch-token');
+    set({
+      currentUser: null,
+      token: null,
+      isAuthenticated: false
+    });
+  },
+  
+  setCurrentUser: (userData) => set({ currentUser: userData }),
 
   // Map state
   selectedRoad: null,
@@ -21,12 +37,28 @@ const useAppStore = create((set) => ({
     set((state) => ({ complaints: [complaint, ...state.complaints] })),
 
   // Chat history
-  chatMessages: [],
+  chatMessages: (() => {
+    try {
+      const saved = sessionStorage.getItem('roadwatch-chat-history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  })(),
   addChatMessage: (msg) =>
-    set((state) => ({
-      chatMessages: [...state.chatMessages, msg].slice(-50),
-    })),
-  clearChat: () => set({ chatMessages: [] }),
+    set((state) => {
+      const newMessages = [...state.chatMessages, msg].slice(-50);
+      try {
+        sessionStorage.setItem('roadwatch-chat-history', JSON.stringify(newMessages));
+      } catch (e) {
+        console.error("Could not save chat history to sessionStorage", e);
+      }
+      return { chatMessages: newMessages };
+    }),
+  clearChat: () => {
+    sessionStorage.removeItem('roadwatch-chat-history');
+    set({ chatMessages: [] });
+  },
 
   // Notification
   notification: null,

@@ -38,10 +38,28 @@ function ChatBubble({ message }) {
 }
 
 export default function AIAssistantPage() {
-  const { chatMessages, addChatMessage } = useAppStore();
+  const { chatMessages, addChatMessage, currentUser } = useAppStore();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [locationData, setLocationData] = useState({ lat: 0, lng: 0, city: 'Mumbai' });
   const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocationData({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            city: 'Mumbai'
+          });
+        },
+        (error) => {
+          console.warn("Geolocation denied or error:", error);
+        }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -56,22 +74,54 @@ export default function AIAssistantPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(import.meta.env.VITE_AI_WEBHOOK_URL || '', {
+      const historyPayload = chatMessages
+        .slice(-7)
+        .map(m => ({
+          role: m.role === 'bot' || m.role === 'assistant' ? 'assistant' : 'user',
+          content: m.content
+        }));
+
+      const payload = {
+        message: query,
+        history: historyPayload,
+        user: {
+          name: currentUser?.name || "Anonymous",
+          email: currentUser?.email || "No Email"
+        },
+        location: locationData
+      };
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const response = await fetch("https://psychodiagnostic-isidro-increasingly.ngrok-free.dev/webhook/6983c466-4392-4369-a310-17b8f635bcea", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
-      const data = await response.json();
-      addChatMessage({ role: 'assistant', content: data.reply || 'Connecting to municipal database for analysis...', timestamp: new Date() });
+      
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const replyText = await response.text();
+      if (!replyText || !replyText.trim()) {
+        throw new Error('Empty response from server');
+      }
+
+      addChatMessage({ role: 'assistant', content: replyText, timestamp: new Date() });
     } catch (err) {
-      setTimeout(() => {
-        addChatMessage({ 
-          role: 'assistant', 
-          content: `I've analyzed the road health for "${query}". Our current records show several pending reports in that area. Would you like to see the details?`,
-          timestamp: new Date()
-        });
-        setLoading(false);
-      }, 1500);
+      console.error("Chatbot Error:", err);
+      addChatMessage({ 
+        role: 'assistant', 
+        content: "Sorry, I'm having trouble connecting right now. Please try again later.",
+        timestamp: new Date()
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -170,6 +220,11 @@ export default function AIAssistantPage() {
                 >
                   <Send size={18} />
                 </button>
+              </div>
+              <div className="mt-2 text-center">
+                <span className="text-[10px] text-text-muted font-medium opacity-70">
+                  This app may access your live location while filing complaints for accurate road tracking.
+                </span>
               </div>
             </div>
           </div>
