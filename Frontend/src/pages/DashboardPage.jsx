@@ -144,8 +144,16 @@ export default function DashboardPage() {
                 <tbody className="divide-y divide-border-subtle bg-bg-surface">
                   {complaints.slice(0, 10).map((c, idx) => {
                     const delayed = isDelayed(c);
-                    const d = new Date(c.createdAt);
-                    const dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+                    const formatDate = (dateVal) => {
+                      if (!dateVal) return '';
+                      // Firestore Timestamp
+                      if (dateVal.seconds && dateVal.nanoseconds !== undefined) {
+                        return new Date(dateVal.seconds * 1000).toLocaleDateString();
+                      }
+                      const d = new Date(dateVal);
+                      return isNaN(d) ? '' : d.toLocaleDateString();
+                    };
+                    const dateStr = formatDate(c.createdAt);
                     const roadName = c.roadName || c.location?.split(',')[0] || 'Unknown Road';
                     
                     return (

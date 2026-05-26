@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, User, Mail, Calendar, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Mail, Calendar, Loader2, Fingerprint } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { authService } from '../services/authService';
 import { PageContainer } from '../components/layout/PageContainer';
 import { Card, PageHeader } from '../components/ui';
 
 const fields = [
+  { label: 'User ID', key: 'uid', icon: Fingerprint },
   { label: 'Full Name', key: 'name', icon: User },
   { label: 'Email Address', key: 'email', icon: Mail },
   { label: 'Date of Birth', key: 'dob', icon: Calendar },
@@ -72,7 +73,7 @@ export default function ProfileDetailsPage() {
                   <span className="text-sm font-semibold text-text-muted">{label}</span>
                 </div>
                 <span className="text-sm font-bold text-text-main">
-                  {profile?.[key] || 'Not provided'}
+                  {key === 'uid' ? (profile?.[key] || useAppStore.getState().currentUser?.uid || 'Not provided') : (profile?.[key] || 'Not provided')}
                 </span>
               </div>
             ))}

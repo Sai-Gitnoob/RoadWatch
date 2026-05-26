@@ -17,12 +17,15 @@ const createComplaint = async (req, res) => {
 
     // Complaint Object
     const complaint = {
-      userId: data.userId || "anonymous",
+      ticketId: data.ticketId || `c-${Date.now()}`,
+      roadName: data.roadName || data.location?.split(",")[0] || "Unknown Road",
+      userId: req.user.uid,
       description: data.description,
       location: data.location,
       issueType: data.issueType || "General",
       severity: data.severity || "medium",
-      status: "pending",
+      status: data.status || "pending",
+      source: data.source || "manual",
       createdAt: new Date(),
     };
 
@@ -54,12 +57,25 @@ const createComplaint = async (req, res) => {
 const getComplaints = async (req, res) => {
   try {
 
-    const snapshot = await db.collection("complaints").get();
+    const snapshot = await db
+      .collection("complaints")
+      .where("userId", "==", req.user.uid)
+      .get();
 
-    const complaints = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const complaints = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      // Handle Firestore Timestamps
+      if (data.createdAt && typeof data.createdAt.toDate === 'function') {
+        data.createdAt = data.createdAt.toDate().toISOString();
+      }
+      if (data.updatedAt && typeof data.updatedAt.toDate === 'function') {
+        data.updatedAt = data.updatedAt.toDate().toISOString();
+      }
+      return {
+        id: doc.id,
+        ...data,
+      };
+    });
 
     res.status(200).json({
       success: true,

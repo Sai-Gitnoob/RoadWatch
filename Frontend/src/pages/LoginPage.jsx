@@ -31,6 +31,7 @@ export default function LoginPage() {
       if (!token) throw new Error("Invalid response from server");
       
       login(user || { email, name: email.split('@')[0] }, token);
+      await useAppStore.getState().fetchComplaints();
       navigate('/map');
     } catch (err) {
       setError(err.message || 'Failed to login');

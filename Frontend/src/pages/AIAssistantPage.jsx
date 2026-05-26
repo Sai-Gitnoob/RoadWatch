@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Send, Bot, User, Sparkles, Zap, 
+import {
+  Send, Bot, User, Sparkles, Zap,
   Search, Shield, MessageSquare, Loader2, Plus, Activity, Database
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { PageContainer } from '../components/layout/PageContainer';
+import FormattedBotResponse from '../components/ui/FormattedBotResponse';
+import { complaintService } from '../services/complaintService';
 
 const SUGGESTED_QUERIES = [
   { text: 'Analyze road health in Andheri West', icon: Search },
@@ -14,7 +16,7 @@ const SUGGESTED_QUERIES = [
   { text: 'Summarize recent citizen feedback', icon: MessageSquare },
 ];
 
-function ChatBubble({ message }) {
+function ChatBubble({ message, onSend }) {
   const isBot = message.role === 'assistant' || message.role === 'bot';
   return (
     <motion.div
@@ -28,7 +30,13 @@ function ChatBubble({ message }) {
       </div>
       <div className={`max-w-[85%] px-5 py-3.5 rounded-2xl text-sm font-medium leading-relaxed shadow-sm transition-standard
         ${isBot ? 'bg-bg-base border border-border-subtle text-text-main rounded-tl-none' : 'bg-primary text-white rounded-tr-none'}`}>
-        {message.content}
+
+        {isBot ? (
+          <FormattedBotResponse content={message.content} onSuggestionClick={onSend} />
+        ) : (
+          message.content
+        )}
+
         <div className={`flex items-center gap-2 mt-2 opacity-50 text-[10px] ${isBot ? 'text-text-muted' : 'text-white'}`}>
           <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
@@ -38,7 +46,7 @@ function ChatBubble({ message }) {
 }
 
 export default function AIAssistantPage() {
-  const { chatMessages, addChatMessage, currentUser } = useAppStore();
+  const { chatMessages, addChatMessage, currentUser, token, fetchComplaints } = useAppStore();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [locationData, setLocationData] = useState({ lat: 0, lng: 0, city: 'Mumbai' });
@@ -74,7 +82,8 @@ export default function AIAssistantPage() {
     setLoading(true);
 
     try {
-      const historyPayload = chatMessages
+      const currentHistory = useAppStore.getState().chatMessages;
+      const historyPayload = currentHistory
         .slice(-7)
         .map(m => ({
           role: m.role === 'bot' || m.role === 'assistant' ? 'assistant' : 'user',
@@ -85,6 +94,7 @@ export default function AIAssistantPage() {
         message: query,
         history: historyPayload,
         user: {
+          uid: currentUser?.uid || "Anonymous",
           name: currentUser?.name || "Anonymous",
           email: currentUser?.email || "No Email"
         },
@@ -94,13 +104,17 @@ export default function AIAssistantPage() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-      const response = await fetch("https://psychodiagnostic-isidro-increasingly.ngrok-free.dev/webhook/6983c466-4392-4369-a310-17b8f635bcea", {
+      const webhookUrl = import.meta.env.VITE_AI_WEBHOOK_URL;
+      const response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
         body: JSON.stringify(payload),
         signal: controller.signal
       });
-      
+
       clearTimeout(timeoutId);
 
       if (!response.ok) {
@@ -113,10 +127,54 @@ export default function AIAssistantPage() {
       }
 
       addChatMessage({ role: 'assistant', content: replyText, timestamp: new Date() });
+
+      // Parse AI complaint details and save to Firebase/backend if filed successfully
+      if (replyText.toLowerCase().includes('complaint filed') || replyText.toLowerCase().includes('ticket id')) {
+        const lines = replyText.split('\n');
+        let ticketId = '';
+        let roadName = '';
+        let issueType = '';
+
+        for (const line of lines) {
+          // Allow optional bullet points or dashes before the key-value pairs
+          const match = line.match(/^[-*•]?\s*\**([^:]+):\**\s*(.+)$/);
+          if (match) {
+            const key = match[1].replace(/\*\*/g, '').trim().toLowerCase();
+            const value = match[2].replace(/\*\*/g, '').trim();
+            if (key.includes('ticket id') || key === 'ticket_id' || key === 'ticket') {
+              ticketId = value;
+            } else if (key === 'road' || key === 'road name' || key === 'road_name') {
+              roadName = value;
+            } else if (key === 'issue' || key === 'issue type' || key === 'issue_type') {
+              issueType = value;
+            }
+          }
+        }
+
+        if (ticketId) {
+          try {
+            await complaintService.createComplaint({
+              ticketId: ticketId,
+              roadName: roadName || 'Unknown Road',
+              description: `AI Assisted Complaint: ${issueType || 'hazard'} reported on ${roadName || 'road'}.`,
+              location: roadName ? `${roadName}, Mumbai` : 'Mumbai',
+              issueType: issueType || 'Other',
+              severity: 'medium',
+              status: 'pending',
+              source: 'ai'
+            }, token);
+            
+            // Instantly fetch all updated complaints to reflect on the dashboard
+            await fetchComplaints();
+          } catch (createErr) {
+            console.error("Failed to save AI complaint to database:", createErr);
+          }
+        }
+      }
     } catch (err) {
       console.error("Chatbot Error:", err);
-      addChatMessage({ 
-        role: 'assistant', 
+      addChatMessage({
+        role: 'assistant',
         content: "Sorry, I'm having trouble connecting right now. Please try again later.",
         timestamp: new Date()
       });
@@ -128,7 +186,7 @@ export default function AIAssistantPage() {
   return (
     <PageContainer className="h-[calc(100vh-6rem)] md:p-6 lg:p-8">
       <div className="flex h-full bg-bg-surface md:rounded-3xl border border-border-subtle shadow-sm overflow-hidden">
-        
+
         {/* Left Sidebar - Workspace Context (Hidden on mobile) */}
         <div className="hidden lg:flex flex-col w-[320px] bg-bg-base border-r border-border-subtle p-6">
           <div className="flex items-center gap-3 mb-10">
@@ -147,11 +205,11 @@ export default function AIAssistantPage() {
             {/* Quick Actions */}
             <div>
               <h3 className="text-xs font-bold text-text-muted mb-3 flex items-center gap-2 uppercase tracking-wider">
-                <Database size={14} className="text-primary"/> Suggested Analyses
+                <Database size={14} className="text-primary" /> Suggested Analyses
               </h3>
               <div className="space-y-2.5">
                 {SUGGESTED_QUERIES.map((q, i) => (
-                  <button key={i} onClick={() => handleSend(q.text)} 
+                  <button key={i} onClick={() => handleSend(q.text)}
                     className="w-full text-left p-3.5 rounded-xl bg-bg-surface border border-border-subtle shadow-sm hover:border-primary/40 hover:shadow-md transition-all group flex items-start gap-3">
                     <div className="mt-0.5 text-slate-400 group-hover:text-primary transition-colors">
                       <q.icon size={16} />
@@ -166,10 +224,10 @@ export default function AIAssistantPage() {
 
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col relative bg-bg-surface">
-          <div className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-6 scrollbar-hide pb-40">
+          <div className="flex-1 overflow-y-auto p-6 lg:p-10 space-y-6 scrollbar-hide pb-55 lg:pb-64">
             <AnimatePresence mode="wait">
               {chatMessages.length === 0 ? (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto"
@@ -185,7 +243,7 @@ export default function AIAssistantPage() {
               ) : (
                 <>
                   {chatMessages.map((m, i) => (
-                    <ChatBubble key={i} message={m} />
+                    <ChatBubble key={i} message={m} onSend={handleSend} />
                   ))}
                   {loading && (
                     <div className="flex items-center gap-2 text-xs font-semibold text-text-muted animate-pulse pl-14">

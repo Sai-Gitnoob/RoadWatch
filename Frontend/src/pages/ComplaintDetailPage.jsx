@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  ArrowLeft, MapPin, Calendar, User,
+  ArrowLeft, MapPin, Calendar,
   Shield, AlertTriangle, CheckCircle, Clock, FileText, Phone
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
@@ -84,15 +84,6 @@ export default function ComplaintDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-2xl bg-bg-base/30 border border-border-subtle">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-primary shadow-sm">
-                  <User size={18} />
-                </div>
-                <div>
-                  <p className="text-[9px] font-black text-text-muted uppercase tracking-widest">Assigned Agent</p>
-                  <p className="text-sm font-black text-text-main">{complaint.assignedTo || 'Municipal Taskforce 07'}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-primary shadow-sm">
                   <Shield size={18} />
                 </div>
                 <div>
@@ -103,17 +94,7 @@ export default function ComplaintDetailPage() {
             </div>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <ChartCard title="Predictive Metrics" data={chartData} type="bar" className="h-full" />
-            <Card className="p-8 flex flex-col justify-center text-center" hover={false}>
-              <SectionHeader title="Municipal Response" className="justify-center" />
-              <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
-                <CheckCircle size={32} className="text-success" />
-              </div>
-              <p className="text-sm font-bold text-text-main mb-2">Operational Integrity High</p>
-              <p className="text-xs text-text-muted">Estimated completion: 48-72 Operational Hours</p>
-            </Card>
-          </div>
+
 
 
         </div>

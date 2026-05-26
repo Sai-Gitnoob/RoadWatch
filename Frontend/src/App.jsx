@@ -42,8 +42,9 @@ export default function App() {
     const checkAuth = async () => {
       if (token && !currentUser) {
         try {
-          const data = await authService.getCurrentUser(token);
-          setCurrentUser(data.user || data);
+          const data = await authService.getProfile(token);
+          setCurrentUser(data);
+          await useAppStore.getState().fetchComplaints();
         } catch (error) {
           console.error("Auth validation failed:", error);
           logout();

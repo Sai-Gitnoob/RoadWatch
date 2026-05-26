@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  User, Bell, Settings, LogOut, 
-  ChevronRight, Clock, CheckCircle, FileText, MapPin, Award, Sun, Moon
+import {
+  User, Bell, Settings, LogOut,
+  ChevronRight, Clock, CheckCircle, FileText, MapPin, Award, Sun, Moon, Fingerprint
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { PageContainer } from '../components/layout/PageContainer';
@@ -24,7 +24,7 @@ export default function AccountPage() {
     <PageContainer className="!max-w-4xl mx-auto">
       <div className="flex flex-col items-center text-center mb-10">
         <div className="relative group mb-6">
-          <motion.div 
+          <motion.div
             whileHover={{ scale: 1.05 }}
             className="w-28 h-28 rounded-full bg-primary flex items-center justify-center text-white text-3xl font-bold shadow-md border-4 border-white"
           >
@@ -32,12 +32,15 @@ export default function AccountPage() {
           </motion.div>
           <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-success border-2 border-white shadow-sm" />
         </div>
-        
-        <PageHeader 
-          title={currentUser?.name || 'User'} 
+
+        <PageHeader
+          title={currentUser?.name || 'User'}
           subtitle="Verified Mumbai Resident • Active Contributor"
           className="mb-0 items-center text-center"
         />
+        <p className="text-sm font-medium text-text-muted mt-2">
+          UID: <span className="font-bold text-text-main">{currentUser?.uid || 'N/A'}</span>
+        </p>
       </div>
 
 
@@ -65,7 +68,7 @@ export default function AccountPage() {
             </div>
           </Card>
 
-          <button 
+          <button
             onClick={() => {
               setNotification({ type: 'info', message: 'Logging out...' });
               logout();
@@ -88,7 +91,7 @@ export default function AccountPage() {
                 <p className="text-sm font-medium text-text-muted italic">No reports filed yet.</p>
               </Card>
             ) : (
-              userComplaints.slice(0, 5).map((c, i) => (
+              userComplaints.slice(0, 4).map((c, i) => (
                 <Card key={i} className="p-4 flex items-center justify-between group cursor-pointer" onClick={() => navigate(`/dashboard/complaint/${c.id}`)}>
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-500 group-hover:bg-primary group-hover:text-white transition-standard">
