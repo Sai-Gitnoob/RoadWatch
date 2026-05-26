@@ -32,7 +32,11 @@ export default function LoginPage() {
       
       login(user || { email, name: email.split('@')[0] }, token);
       await useAppStore.getState().fetchComplaints();
-      navigate('/map');
+      if (user?.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/map');
+      }
     } catch (err) {
       setError(err.message || 'Failed to login');
     } finally {

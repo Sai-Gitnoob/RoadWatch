@@ -34,5 +34,23 @@ export const complaintService = {
     }
 
     return response.json();
+  },
+
+  updateStatus: async (id, status, token) => {
+    const response = await fetch(`${API_URL}/api/complaints/${id}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ status })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to update status');
+    }
+
+    return response.json();
   }
 };

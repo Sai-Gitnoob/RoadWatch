@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Clock, CheckCircle, AlertTriangle, FileText, 
-  ChevronRight, MapPin, Calendar, Plus, UserCheck 
+  ChevronRight, MapPin, Calendar, Plus, UserCheck, Activity 
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { PageContainer } from '../components/layout/PageContainer';
@@ -11,6 +11,7 @@ import { Card, StatCard, StatusBadge, PageHeader, SectionHeader } from '../compo
 import ChartCard from '../components/charts/ChartCard';
 
 function isDelayed(complaint) {
+  if (!complaint.createdAt) return false;
   const days = (Date.now() - new Date(complaint.createdAt).getTime()) / 86400000;
   return complaint.status !== 'resolved' && days > 7;
 }
@@ -36,14 +37,17 @@ export default function DashboardPage() {
   const navigate   = useNavigate();
 
   const stats = useMemo(() => {
-    let resolved = 0;
-    let assigned = 0;
     let pending = 0;
+    let assigned = 0;
+    let inProgress = 0;
+    let resolved = 0;
 
     complaints.forEach((c) => {
       if (c.status === 'resolved') {
         resolved++;
-      } else if (c.status === 'assigned' || c.status === 'in_progress') {
+      } else if (c.status === 'in-progress') {
+        inProgress++;
+      } else if (c.status === 'assigned') {
         assigned++;
       } else {
         pending++;
@@ -51,38 +55,21 @@ export default function DashboardPage() {
     });
 
     return {
-      total: complaints.length,
-      resolved,
       pending,
       assigned,
+      inProgress,
+      resolved,
     };
   }, [complaints]);
 
   const customStatusData = useMemo(() => {
-    let delayed = 0;
-    let pending = 0;
-    let assigned = 0;
-    let resolved = 0;
-
-    complaints.forEach((c) => {
-      if (c.status === 'resolved') {
-        resolved++;
-      } else if (isDelayed(c)) {
-        delayed++;
-      } else if (c.status === 'assigned' || c.status === 'in_progress') {
-        assigned++;
-      } else {
-        pending++;
-      }
-    });
-
     return [
-      { name: 'Assigned', value: assigned },
-      { name: 'Pending', value: pending },
-      { name: 'Delayed', value: delayed },
-      { name: 'Resolved', value: resolved },
+      { name: 'Pending', value: stats.pending },
+      { name: 'Assigned', value: stats.assigned },
+      { name: 'In Progress', value: stats.inProgress },
+      { name: 'Resolved', value: stats.resolved },
     ];
-  }, [complaints]);
+  }, [stats]);
 
   return (
     <PageContainer>
@@ -102,16 +89,16 @@ export default function DashboardPage() {
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <StatCard value={stats.total}    label="Total Reports"  icon={FileText}      status="primary" className="border-primary/20 bg-primary/5" />
-        <StatCard value={stats.resolved} label="Resolved"       icon={CheckCircle}   status="success" />
-        <StatCard value={stats.pending}  label="Pending"        icon={Clock}         status="warning" />
-        <StatCard value={stats.assigned} label="Assigned"       icon={UserCheck}     status="info"    />
+        <StatCard value={stats.pending}    label="Pending"      icon={Clock}         status="danger" />
+        <StatCard value={stats.assigned}   label="Assigned"     icon={UserCheck}     status="warning" />
+        <StatCard value={stats.inProgress} label="In Progress"  icon={Activity}      status="info" />
+        <StatCard value={stats.resolved}   label="Resolved"     icon={CheckCircle}   status="success" />
       </div>
 
       {/* Analytics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
         <ChartCard title="Report Status Distribution" data={customStatusData} type="pie" />
-        <ChartCard title="Monthly Volume" data={customStatusData} type="bar" />
+        <ChartCard title="Pipeline Volume" data={customStatusData} type="bar" />
       </div>
 
       {/* Recent Complaints */}
@@ -146,10 +133,6 @@ export default function DashboardPage() {
                     const delayed = isDelayed(c);
                     const formatDate = (dateVal) => {
                       if (!dateVal) return '';
-                      // Firestore Timestamp
-                      if (dateVal.seconds && dateVal.nanoseconds !== undefined) {
-                        return new Date(dateVal.seconds * 1000).toLocaleDateString();
-                      }
                       const d = new Date(dateVal);
                       return isNaN(d) ? '' : d.toLocaleDateString();
                     };
