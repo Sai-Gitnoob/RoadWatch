@@ -111,6 +111,11 @@ export default function AIAssistantPage() {
       const payload = {
         message: contextPayload,
         history: historyPayload,
+        ticketId: `c-${Date.now()}`,
+        source: 'ai',
+        status: 'pending',
+        issueType: '',
+        severity: '',
         user: {
           uid: currentUser?.uid || "Anonymous",
           userId: currentUser?.uid || "Anonymous",

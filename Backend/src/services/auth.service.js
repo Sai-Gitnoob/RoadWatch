@@ -13,6 +13,13 @@ const createUser = async (userData) => {
     password,
   } = userData;
 
+  if (
+    email === process.env.ADMIN_EMAIL_1 ||
+    email === process.env.ADMIN_EMAIL_2
+  ) {
+    throw new Error("Cannot use an admin email to sign up");
+  }
+
   // Check if user already exists
   const existingUser = await db
     .collection("users")

@@ -30,11 +30,11 @@ export default function AdminActiveComplaints() {
   const sortedComplaints = [...activeComplaints].sort((a, b) => {
     const sevA = severityWeight[a.severity] || 0;
     const sevB = severityWeight[b.severity] || 0;
-    
+
     if (sevA !== sevB) {
       return sevB - sevA; // Descending severity
     }
-    
+
     const dateA = new Date(a.createdAt).getTime();
     const dateB = new Date(b.createdAt).getTime();
     return dateA - dateB; // Ascending age (oldest first)
@@ -57,7 +57,7 @@ export default function AdminActiveComplaints() {
         ) : (
           sortedComplaints.map(complaint => (
             <div key={complaint.id} className="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-sm hover:border-slate-600 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
-              
+
               <div className="flex-1">
                 <div className="flex flex-wrap items-center gap-3 mb-2">
                   <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${severityColors[complaint.severity] || severityColors.low}`}>
@@ -72,9 +72,9 @@ export default function AdminActiveComplaints() {
                     {complaint.ticketId}
                   </span>
                 </div>
-                
+
                 <h3 className="text-base font-bold text-white mb-1 leading-tight">{complaint.issueType}</h3>
-                
+
                 <p className="text-sm font-medium text-slate-300 flex items-start gap-1.5 line-clamp-1">
                   <MapPin size={14} className="text-slate-500 flex-shrink-0 mt-0.5" />
                   <span>{complaint.roadName} • <span className="text-slate-500">{typeof complaint.location === 'string' ? complaint.location : (complaint.location?.landmark || complaint.location?.area || 'Mumbai')}</span></span>
@@ -82,7 +82,7 @@ export default function AdminActiveComplaints() {
               </div>
 
               <div className="flex items-center md:flex-col gap-2 flex-shrink-0 w-full md:w-auto">
-                <button 
+                <button
                   onClick={() => navigate(`/admin/complaint/${complaint.id}`)}
                   className="w-full md:w-32 bg-primary hover:bg-primary-light text-white font-bold text-xs py-3 rounded-xl transition-colors shadow-sm"
                 >

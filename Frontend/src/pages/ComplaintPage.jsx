@@ -90,6 +90,8 @@ function ManualForm({ prefillRoad }) {
         lat: locationData.lat || 19.0760,
         lng: locationData.lng || 72.8777,
         authority: prefillRoad?.authority || "BMC",
+        source: 'manual',
+        status: 'pending',
         user: {
           uid: currentUser.uid,
           userId: currentUser.uid,
