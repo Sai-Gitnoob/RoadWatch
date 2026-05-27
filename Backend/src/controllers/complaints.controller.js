@@ -19,7 +19,7 @@ const createComplaint = async (req, res) => {
     const complaint = {
       ticketId: data.ticketId || `c-${Date.now()}`,
       roadName: data.roadName || data.location?.split(",")[0] || "Unknown Road",
-      userId: req.user.uid,
+      userId: (data.user && data.user.uid) || (req.user && req.user.uid) || null,
       description: data.description,
       location: data.location,
       issueType: data.issueType || "General",
