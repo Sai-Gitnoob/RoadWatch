@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-
+const sessionRoutes = require("./routes/session.routes");
 const complaintRoutes = require("./routes/complaints.routes");
 
 const app = express();
@@ -22,6 +22,6 @@ app.get("/", (req, res) => {
     message: "RoadWatch API running",
   });
 });
-
+app.use("/api/session", sessionRoutes);
 
 module.exports = app;

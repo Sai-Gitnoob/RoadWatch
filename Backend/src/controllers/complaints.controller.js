@@ -13,8 +13,23 @@ const createComplaint = async (req, res) => {
 
     const data = req.body;
 
+    // Get logged-in user from JWT middleware
+    const userId = req.user?.id;
+
+    // Check authentication
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized user",
+      });
+    }
+
     // Validation
-    if (!data.description || !data.location) {
+    if (
+      !data.description ||
+      !data.description.trim() ||
+      !data.location
+    ) {
       return res.status(400).json({
         success: false,
         message: "Description and location are required",
