@@ -123,7 +123,7 @@ export default function AdminComplaintDetail() {
               </h3>
               <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700 space-y-2">
                 <p className="text-white font-bold">{complaint.roadName}</p>
-                <p className="text-slate-400 text-sm font-medium">{complaint.location}</p>
+                <p className="text-slate-400 text-sm font-medium">{typeof complaint.location === 'string' ? complaint.location : (complaint.location?.landmark || complaint.location?.area || 'Mumbai')}</p>
               </div>
             </div>
           </div>

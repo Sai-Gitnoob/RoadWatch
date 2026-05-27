@@ -5,10 +5,14 @@ import TopNav from '../layout/TopNav';
 import BottomNav from '../layout/BottomNav';
 
 export default function ProtectedRoute({ children }) {
-  const { isAuthenticated, token } = useAppStore();
+  const { isAuthenticated, token, currentUser } = useAppStore();
   
   if (!isAuthenticated && !token) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (currentUser && currentUser.role === 'admin') {
+    return <Navigate to="/admin" replace />;
   }
   
   return (

@@ -22,7 +22,6 @@ const severityOptions = [
   { value: 'low', label: 'Low', color: 'oklch(var(--color-success))', desc: 'Minor' },
   { value: 'medium', label: 'Medium', color: 'oklch(var(--color-info))', desc: 'Noticeable' },
   { value: 'high', label: 'High', color: 'oklch(var(--color-warning))', desc: 'Safety Risk' },
-  { value: 'critical', label: 'Critical', color: 'oklch(var(--color-danger))', desc: 'Urgent' },
 ];
 
 function ManualForm({ prefillRoad }) {

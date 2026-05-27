@@ -22,9 +22,12 @@ import AdminStatistics from './pages/admin/AdminStatistics';
 import AdminComplaintDetail from './pages/admin/AdminComplaintDetail';
 
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated, token } = useAppStore();
+  const { isAuthenticated, token, currentUser } = useAppStore();
   
   if (isAuthenticated || token) {
+    if (currentUser?.role === 'admin') {
+      return <Navigate to="/admin" replace />;
+    }
     return <Navigate to="/map" replace />;
   }
   
@@ -45,11 +48,16 @@ export default function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (token && !currentUser) {
+      if (token) {
         try {
-          const data = await authService.getProfile(token);
-          setCurrentUser(data);
-          await useAppStore.getState().fetchComplaints();
+          if (!currentUser) {
+            const data = await authService.getProfile(token);
+            setCurrentUser(data);
+            sessionStorage.setItem('roadwatch-user', JSON.stringify(data));
+          }
+          if (useAppStore.getState().complaints.length === 0) {
+            await useAppStore.getState().fetchComplaints();
+          }
         } catch (error) {
           console.error("Auth validation failed:", error);
           logout();
@@ -58,7 +66,8 @@ export default function App() {
       setAuthChecking(false);
     };
     checkAuth();
-  }, [token, currentUser, setCurrentUser, logout]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (authChecking) {
     return (

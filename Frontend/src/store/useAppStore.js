@@ -3,12 +3,15 @@ import { complaintService } from '../services/complaintService';
 
 const useAppStore = create((set) => ({
   // Auth
-  currentUser: null,
-  token: localStorage.getItem('roadwatch-token') || null,
-  isAuthenticated: !!localStorage.getItem('roadwatch-token'),
+  currentUser: JSON.parse(sessionStorage.getItem('roadwatch-user') || 'null'),
+  token: sessionStorage.getItem('roadwatch-token') || null,
+  isAuthenticated: !!sessionStorage.getItem('roadwatch-token'),
   
   login: (userData, token) => {
-    localStorage.setItem('roadwatch-token', token);
+    sessionStorage.setItem('roadwatch-token', token);
+    if (userData) {
+      sessionStorage.setItem('roadwatch-user', JSON.stringify(userData));
+    }
     const userChatKey = `roadwatch-chat-history-${userData?.uid || 'default'}`;
     let loadedChat = [];
     try {
@@ -25,7 +28,8 @@ const useAppStore = create((set) => ({
   },
   
   logout: () => {
-    localStorage.removeItem('roadwatch-token');
+    sessionStorage.removeItem('roadwatch-token');
+    sessionStorage.removeItem('roadwatch-user');
     set({
       currentUser: null,
       token: null,

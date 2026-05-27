@@ -64,7 +64,7 @@ export default function AdminResolvedComplaints() {
                 
                 <p className="text-sm font-medium text-slate-400 flex items-start gap-1.5 line-clamp-1">
                   <MapPin size={14} className="flex-shrink-0 mt-0.5" />
-                  <span>{complaint.roadName} • {complaint.location}</span>
+                  <span>{complaint.roadName} • {typeof complaint.location === 'string' ? complaint.location : (complaint.location?.landmark || complaint.location?.area || 'Mumbai')}</span>
                 </p>
               </div>
 
