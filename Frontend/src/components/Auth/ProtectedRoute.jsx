@@ -7,9 +7,12 @@ import BottomNav from '../layout/BottomNav';
 export default function ProtectedRoute({ children }) {
   const { isAuthenticated, token } = useAppStore();
   
+  // For testing, bypass authentication check
+  /*
   if (!isAuthenticated && !token) {
     return <Navigate to="/login" replace />;
   }
+  */
   
   return (
     <div className="w-full max-w-6xl min-h-screen bg-bg-base flex flex-col relative">

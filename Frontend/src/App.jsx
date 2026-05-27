@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import TopNav from './components/layout/TopNav';
 import BottomNav from './components/layout/BottomNav';
 import useAppStore from './store/useAppStore';
@@ -64,7 +64,7 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <div className="bg-bg-base min-h-screen w-full flex justify-center overflow-x-hidden">
         <Toast />
         <Routes>
@@ -84,6 +84,6 @@ export default function App() {
           <Route path="/profile" element={<ProtectedRoute><ProfileDetailsPage /></ProtectedRoute>} />
         </Routes>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
