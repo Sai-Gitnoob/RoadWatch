@@ -15,11 +15,19 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/Auth/SignUp';
 import { authService } from './services/authService';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
+import AdminRoute from './components/Auth/AdminRoute';
+import AdminActiveComplaints from './pages/admin/AdminActiveComplaints';
+import AdminResolvedComplaints from './pages/admin/AdminResolvedComplaints';
+import AdminStatistics from './pages/admin/AdminStatistics';
+import AdminComplaintDetail from './pages/admin/AdminComplaintDetail';
 
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated, token } = useAppStore();
+  const { isAuthenticated, token, currentUser } = useAppStore();
   
   if (isAuthenticated || token) {
+    if (currentUser?.role === 'admin') {
+      return <Navigate to="/admin" replace />;
+    }
     return <Navigate to="/map" replace />;
   }
   
@@ -40,11 +48,16 @@ export default function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (token && !currentUser) {
+      if (token) {
         try {
-          const data = await authService.getProfile(token);
-          setCurrentUser(data);
-          await useAppStore.getState().fetchComplaints();
+          if (!currentUser) {
+            const data = await authService.getProfile(token);
+            setCurrentUser(data);
+            sessionStorage.setItem('roadwatch-user', JSON.stringify(data));
+          }
+          if (useAppStore.getState().complaints.length === 0) {
+            await useAppStore.getState().fetchComplaints();
+          }
         } catch (error) {
           console.error("Auth validation failed:", error);
           logout();
@@ -53,7 +66,8 @@ export default function App() {
       setAuthChecking(false);
     };
     checkAuth();
-  }, [token, currentUser, setCurrentUser, logout]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (authChecking) {
     return (
@@ -82,6 +96,12 @@ export default function App() {
           <Route path="/ai" element={<ProtectedRoute><AIAssistantPage /></ProtectedRoute>} />
           <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfileDetailsPage /></ProtectedRoute>} />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminRoute><AdminActiveComplaints /></AdminRoute>} />
+          <Route path="/admin/resolved" element={<AdminRoute><AdminResolvedComplaints /></AdminRoute>} />
+          <Route path="/admin/stats" element={<AdminRoute><AdminStatistics /></AdminRoute>} />
+          <Route path="/admin/complaint/:id" element={<AdminRoute><AdminComplaintDetail /></AdminRoute>} />
         </Routes>
       </div>
     </HashRouter>

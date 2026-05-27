@@ -19,7 +19,7 @@ const createComplaint = async (req, res) => {
     const complaint = {
       ticketId: data.ticketId || `c-${Date.now()}`,
       roadName: data.roadName || data.location?.split(",")[0] || "Unknown Road",
-      userId: req.user.uid,
+      userId: (data.user && data.user.uid) || (req.user && req.user.uid) || null,
       description: data.description,
       location: data.location,
       issueType: data.issueType || "General",
@@ -57,20 +57,24 @@ const createComplaint = async (req, res) => {
 const getComplaints = async (req, res) => {
   try {
 
-    const snapshot = await db
-      .collection("complaints")
-      .where("userId", "==", req.user.uid)
-      .get();
+    let snapshot;
+    if (req.user.role === "admin") {
+      snapshot = await db.collection("complaints").get();
+    } else {
+      snapshot = await db
+        .collection("complaints")
+        .where("userId", "==", req.user.uid)
+        .get();
+    }
 
     const complaints = snapshot.docs.map((doc) => {
       const data = doc.data();
-      // Handle Firestore Timestamps
-      if (data.createdAt && typeof data.createdAt.toDate === 'function') {
-        data.createdAt = data.createdAt.toDate().toISOString();
-      }
-      if (data.updatedAt && typeof data.updatedAt.toDate === 'function') {
-        data.updatedAt = data.updatedAt.toDate().toISOString();
-      }
+      // Handle Firestore Timestamps uniformly
+      ['createdAt', 'updatedAt', 'assignedAt', 'inProgressAt', 'resolvedAt'].forEach(field => {
+        if (data[field] && typeof data[field].toDate === 'function') {
+          data[field] = data[field].toDate().toISOString();
+        }
+      });
       return {
         id: doc.id,
         ...data,
@@ -111,11 +115,18 @@ const getComplaintById = async (req, res) => {
       });
     }
 
+    const data = doc.data();
+    ['createdAt', 'updatedAt', 'assignedAt', 'inProgressAt', 'resolvedAt'].forEach(field => {
+      if (data[field] && typeof data[field].toDate === 'function') {
+        data[field] = data[field].toDate().toISOString();
+      }
+    });
+
     res.status(200).json({
       success: true,
       data: {
         id: doc.id,
-        ...doc.data(),
+        ...data,
       },
     });
 
@@ -141,6 +152,7 @@ const updateComplaintStatus = async (req, res) => {
     // Allowed status values
     const allowedStatus = [
       "pending",
+      "assigned",
       "in-progress",
       "resolved",
     ];
@@ -165,11 +177,35 @@ const updateComplaintStatus = async (req, res) => {
       });
     }
 
-    // Update status
-    await complaintRef.update({
+    const currentData = doc.data();
+    const currentStatus = currentData.status || "pending";
+
+    // Strict One-Way Status Flow Validation
+    if (currentStatus === "resolved") {
+      return res.status(400).json({ success: false, message: "Complaint is already resolved and immutable" });
+    }
+    
+    if (status === "assigned" && currentStatus !== "pending") {
+      return res.status(400).json({ success: false, message: "Can only mark assigned from pending" });
+    }
+    if (status === "in-progress" && currentStatus !== "assigned") {
+      return res.status(400).json({ success: false, message: "Can only mark in-progress from assigned" });
+    }
+    if (status === "resolved" && currentStatus !== "in-progress") {
+      return res.status(400).json({ success: false, message: "Can only mark resolved from in-progress" });
+    }
+
+    // Update status with timeline timestamps
+    const updateData = {
       status,
       updatedAt: new Date(),
-    });
+    };
+    
+    if (status === "assigned") updateData.assignedAt = new Date();
+    if (status === "in-progress") updateData.inProgressAt = new Date();
+    if (status === "resolved") updateData.resolvedAt = new Date();
+
+    await complaintRef.update(updateData);
 
     res.status(200).json({
       success: true,

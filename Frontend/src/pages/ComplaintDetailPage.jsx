@@ -103,11 +103,31 @@ export default function ComplaintDetailPage() {
           <SectionHeader title="Activity Timeline" />
           <div className="relative pl-8 space-y-8 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-px before:bg-border-subtle">
             {[
-              { status: 'Resolved', time: 'Pending Execution', desc: 'Municipal repairs scheduled for next cycle.', icon: CheckCircle, color: 'text-text-muted' },
-              { status: 'In Progress', time: '12h ago', desc: 'Taskforce dispatched to coordinates.', icon: Clock, color: 'text-info' },
-              { status: 'Validated', time: '18h ago', desc: 'Geospatial AI confirmed reported hazard.', icon: Shield, color: 'text-primary' },
-              { status: 'Filed', time: '24h ago', desc: 'Citizen report entered into neural pipeline.', icon: FileText, color: 'text-success' },
-            ].map((step, i) => (
+              ...(complaint.createdAt ? [{
+                status: 'Complaint Filed',
+                time: new Date(complaint.createdAt).toLocaleString(),
+                desc: 'Citizen report entered into system pipeline.',
+                icon: FileText, color: 'text-success'
+              }] : []),
+              ...(complaint.assignedAt ? [{
+                status: 'Assigned',
+                time: new Date(complaint.assignedAt).toLocaleString(),
+                desc: 'Assigned to municipal response team.',
+                icon: Shield, color: 'text-info'
+              }] : []),
+              ...(complaint.inProgressAt ? [{
+                status: 'In Progress',
+                time: new Date(complaint.inProgressAt).toLocaleString(),
+                desc: 'Taskforce dispatched to coordinates.',
+                icon: Clock, color: 'text-primary'
+              }] : []),
+              ...(complaint.resolvedAt ? [{
+                status: 'Resolved',
+                time: new Date(complaint.resolvedAt).toLocaleString(),
+                desc: 'Municipal repairs completed successfully.',
+                icon: CheckCircle, color: 'text-success'
+              }] : [])
+            ].reverse().map((step, i) => (
               <div key={i} className="relative">
                 <div className={`absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-white border-2 border-border-subtle flex items-center justify-center z-10 ${step.color}`}>
                   <step.icon size={12} />

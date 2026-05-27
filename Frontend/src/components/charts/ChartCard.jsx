@@ -7,12 +7,12 @@ import SectionHeader from '../ui/SectionHeader';
 
 export default function ChartCard({ title, type = 'bar', data, className = '' }) {
   const COLORS = {
-    pending: '#F59E0B',
-    assigned: '#3B82F6',
-    inprogress: '#3B82F6',
-    resolved: '#22C55E',
-    delayed: '#EF4444',
-    critical: '#EF4444',
+    pending: '#EF4444', // red for pending
+    assigned: '#F59E0B', // orange for assigned
+    inprogress: '#3B82F6', // keep blue for in progress
+    resolved: '#22C55E', // green for resolved
+    delayed: '#EF4444', // red (kept for any delayed usage)
+    critical: '#EF4444', // red for critical
   };
 
   return (

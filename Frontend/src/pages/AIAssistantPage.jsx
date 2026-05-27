@@ -90,8 +90,26 @@ export default function AIAssistantPage() {
           content: m.content
         }));
 
+      let contextPayload = query;
+      try {
+        const currentComplaints = useAppStore.getState().complaints;
+        const matchedLocal = currentComplaints.find(c => query.toLowerCase().includes(c.id.toLowerCase()));
+
+        if (matchedLocal) {
+          const freshData = await complaintService.getComplaints(token);
+          useAppStore.getState().setComplaints(freshData.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+          const freshComplaint = freshData.data.find(c => c.id === matchedLocal.id);
+
+          if (freshComplaint) {
+            contextPayload = `${query}\n\n[SYSTEM NOTE: User is inquiring about ticket ${freshComplaint.id}. The live backend status for this ticket is '${freshComplaint.status}'. Provide this exact status to the user.]`;
+          }
+        }
+      } catch (e) {
+        console.error("Live status lookup failed:", e);
+      }
+
       const payload = {
-        message: query,
+        message: contextPayload,
         history: historyPayload,
         user: {
           uid: currentUser?.uid || "Anonymous",
@@ -105,7 +123,9 @@ export default function AIAssistantPage() {
       const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       const webhookUrl = import.meta.env.VITE_AI_WEBHOOK_URL;
-      const response = await fetch(webhookUrl, {
+
+      const minimumDelayPromise = new Promise(resolve => setTimeout(resolve, 8000));
+      const fetchPromise = fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,6 +134,8 @@ export default function AIAssistantPage() {
         body: JSON.stringify(payload),
         signal: controller.signal
       });
+
+      const [response] = await Promise.all([fetchPromise, minimumDelayPromise]);
 
       clearTimeout(timeoutId);
 
@@ -163,7 +185,7 @@ export default function AIAssistantPage() {
               status: 'pending',
               source: 'ai'
             }, token);
-            
+
             // Instantly fetch all updated complaints to reflect on the dashboard
             await fetchComplaints();
           } catch (createErr) {
