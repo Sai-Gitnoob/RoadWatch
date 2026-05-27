@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef, Fragment } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef, Fragment } from 'react';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -126,148 +126,144 @@ function BottomSheet({ road, onClose, onRaiseComplaint, isDark }) {
       animate={{ y: 0 }}
       exit={{ y: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="absolute bottom-0 left-0 right-0 z-20 rounded-t-3xl p-6 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] bg-bg-surface/80 backdrop-blur-2xl border-t border-border-subtle max-h-[85vh] overflow-y-auto"
+      className="absolute bottom-0 left-0 right-0 z-20 rounded-t-3xl p-3 md:p-4 pb-3 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] bg-bg-surface/80 backdrop-blur-2xl border-t border-border-subtle max-h-[80vh] md:max-h-[55vh] flex flex-col overflow-hidden"
     >
-      <div className="w-12 h-1.5 rounded-full bg-slate-300/50 mx-auto mb-6" />
+      <div className="w-12 h-1 rounded-full bg-slate-300/50 mx-auto mb-2 shrink-0" />
 
       {/* Header */}
-      <div className="flex items-start justify-between mb-5">
+      <div className="flex items-start justify-between mb-2.5 shrink-0">
         <div className="flex-1 pr-6">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm"
+          <div className="flex items-center gap-2 mb-1">
+            <div className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm"
               style={{ background: cfg.bgColor, color: cfg.textColor, border: `1px solid ${cfg.hex}30` }}>
               {cfg.icon}
               {cfg.label}
             </div>
-            <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">{road.authority}</span>
+            <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{road.authority}</span>
           </div>
-          <h2 className="text-2xl font-extrabold text-text-main tracking-tight leading-tight">{road.name}</h2>
-          <div className="flex items-center gap-2 mt-2 text-text-muted text-sm font-semibold">
-            <MapPin size={14} className="text-primary" />
-            <span>{from}</span>
-            {to && <ChevronRight size={14} className="text-slate-300" />}
-            {to && <span>{to}</span>}
+          <h2 className="text-lg md:text-xl font-extrabold text-text-main tracking-tight leading-tight">{road.name}</h2>
+          <div className="flex items-center gap-1.5 mt-0.5 text-text-muted text-xs font-semibold">
+            <MapPin size={12} className="text-primary shrink-0" />
+            <span className="truncate">{from}</span>
+            {to && <ChevronRight size={10} className="text-slate-300 shrink-0" />}
+            {to && <span className="truncate">{to}</span>}
           </div>
         </div>
-        <button onClick={onClose} className="p-2.5 rounded-full bg-slate-100/50 hover:bg-slate-200/50 text-text-muted transition-colors backdrop-blur-sm">
-          <X size={20} />
+        <button onClick={onClose} className="p-1.5 rounded-full bg-slate-100/50 hover:bg-slate-200/50 text-text-muted transition-colors backdrop-blur-sm shrink-0">
+          <X size={16} />
         </button>
       </div>
 
-      {/* Bottom Sheet Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
-        {/* Left Column: ROADWATCH UI / Complaint stats + Raise Complaint */}
-        <div className="md:col-span-7 flex flex-col justify-between">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <div className="bg-bg-base/50 backdrop-blur-md rounded-2xl p-5 border border-border-subtle shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5"><AlertTriangle size={14}/> Complaint Stats</span>
-                <span className="text-xl font-bold text-text-main">{road.complaints} <span className="text-sm font-semibold text-text-muted">reports</span></span>
+      {/* Scrollable Content Container (Middle Section) */}
+      <div className="flex-1 overflow-y-auto pr-1 min-h-0 mb-2.5 scrollbar-thin select-none">
+        <div className="flex flex-col gap-3">
+          
+          {/* Top Row: Complaint Status & Repair Details side-by-side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            
+            {/* Complaint Status Card */}
+            <div className="bg-bg-base/50 backdrop-blur-md rounded-2xl p-3 border border-border-subtle shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
+                    <AlertTriangle size={12} className="text-text-muted shrink-0" /> COMPLAINT STATUS
+                  </span>
+                  <span className="text-sm font-bold text-text-main">
+                    {road.complaints} <span className="text-[10px] font-semibold text-text-muted">reports</span>
+                  </span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }} 
+                    animate={{ width: `${Math.min((road.complaints / 12) * 100, 100)}%` }}
+                    className="h-full rounded-full" 
+                    style={{ background: cfg.hex }} 
+                  />
+                </div>
               </div>
-              <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }} 
-                  animate={{ width: `${Math.min((road.complaints / 12) * 100, 100)}%` }}
-                  className="h-full rounded-full" 
-                  style={{ background: cfg.hex }} 
-                />
+              {road.complaintsContext && (
+                <p className="text-[10.5px] font-semibold text-text-muted leading-relaxed mt-2">
+                  {road.complaintsContext}
+                </p>
+              )}
+            </div>
+
+            {/* Repair Details Card */}
+            <div className="bg-bg-base/50 backdrop-blur-md rounded-2xl p-3 border border-border-subtle shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between w-full mb-2">
+                <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5">
+                  <CheckCircle size={12} className="text-text-muted shrink-0"/> REPAIR DETAILS
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-between gap-4 mt-2">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-bold text-text-main leading-tight mb-0.5">Last Repaired</span>
+                  <span className="text-[11px] font-semibold text-text-muted">{road.lastRepair || "Ongoing"}</span>
+                </div>
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Clock size={15} className="text-primary" />
+                </div>
               </div>
             </div>
 
-            <div className="bg-bg-base/50 backdrop-blur-md rounded-2xl p-5 border border-border-subtle shadow-sm flex flex-col justify-center">
-               <div className="flex items-center justify-between">
-                  <div className="flex flex-col">
-                      <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5 mb-1"><CheckCircle size={14}/> Repair Details</span>
-                      <span className="text-sm font-bold text-text-main">Last Repaired</span>
-                      <span className="text-xs font-semibold text-text-muted">{road.lastRepair || "Ongoing"}</span>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Clock size={20} className="text-primary" />
-                  </div>
-               </div>
-            </div>
           </div>
 
-          <button
-            onClick={onRaiseComplaint}
-            className="w-full py-4 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 transition-all active:scale-[0.98]"
-          >
-            <AlertTriangle size={18} />
-            Raise Complaint
-          </button>
-        </div>
-
-        {/* Right Column: "Read More" Box for extra details */}
-        <div className="md:col-span-5">
-          <div className="bg-bg-base/80 backdrop-blur-md rounded-2xl p-5 border border-border-subtle shadow-md h-full flex flex-col">
-            <h3 className="text-xs font-extrabold text-text-main uppercase tracking-wider mb-3 flex items-center gap-2 border-b border-border-subtle pb-2">
-              📋 Infrastructure specifications
+          {/* Bottom Row: Specifications, Budget & Contractor Details (Full Width) */}
+          <div className="bg-bg-base/85 backdrop-blur-md rounded-2xl p-3 border border-border-subtle shadow-md">
+            <h3 className="text-[10px] font-extrabold text-text-main uppercase tracking-wider mb-2.5 flex items-center gap-1.5 border-b border-border-subtle pb-1.5 shrink-0">
+              📋 SPECIFICATIONS & BUDGETS
             </h3>
             
-            <div className="space-y-4 flex-1 text-xs overflow-y-auto max-h-[250px] scrollbar-hide pr-1">
-              {road.complaintsContext && (
-                <div className="bg-primary/5 rounded-xl p-3 border border-primary/15 mb-2">
-                  <p className="font-semibold text-primary mb-1">Context</p>
-                  <p className="text-text-muted leading-relaxed font-medium">{road.complaintsContext}</p>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <span className="text-[10px] text-text-muted font-bold uppercase tracking-wide">Category</span>
-                  <p className="font-bold text-text-main mt-0.5 capitalize">{road.category}</p>
-                </div>
-                <div>
-                  <span className="text-[10px] text-text-muted font-bold uppercase tracking-wide">Contractor</span>
-                  <p className="font-bold text-text-main mt-0.5 truncate" title={road.contractor}>{road.contractor || "N/A"}</p>
-                </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2.5">
+              <div>
+                <span className="text-[9px] text-text-muted font-bold uppercase tracking-wider">Category</span>
+                <p className="font-bold text-text-main mt-0.5 capitalize text-[11px]">{road.category}</p>
               </div>
-
-              <div className="grid grid-cols-2 gap-3 border-t border-border-subtle/50 pt-2">
-                <div>
-                  <span className="text-[10px] text-text-muted font-bold uppercase tracking-wide">First Budget</span>
-                  <p className="font-bold text-text-main mt-0.5">{road.firstBudgetSanctionedInr || "N/A"}</p>
-                </div>
-                <div>
-                  <span className="text-[10px] text-text-muted font-bold uppercase tracking-wide">Latest Budget</span>
-                  <p className="font-bold text-text-main mt-0.5">{road.latestBudgetSanctionedInr || "N/A"}</p>
-                </div>
+              <div>
+                <span className="text-[9px] text-text-muted font-bold uppercase tracking-wider">Contractor</span>
+                <p className="font-bold text-text-main mt-0.5 truncate text-[11px]" title={road.contractor}>{road.contractor || "N/A"}</p>
               </div>
-
-              <div className="grid grid-cols-2 gap-3 border-t border-border-subtle/50 pt-2">
-                <div>
-                  <span className="text-[10px] text-text-muted font-bold uppercase tracking-wide">First Spent</span>
-                  <p className="font-bold text-text-main mt-0.5">{road.firstSpent || "N/A"}</p>
-                </div>
-                <div>
-                  <span className="text-[10px] text-text-muted font-bold uppercase tracking-wide">Latest Spent</span>
-                  <p className="font-bold text-text-main mt-0.5">{road.latestSpent || "N/A"}</p>
-                </div>
+              <div>
+                <span className="text-[9px] text-text-muted font-bold uppercase tracking-wider">First / Latest Budget</span>
+                <p className="font-bold text-text-main mt-0.5 text-[11px]">{road.firstBudgetSanctionedInr || "N/A"} / {road.latestBudgetSanctionedInr || "N/A"}</p>
               </div>
-
-              <div className="border-t border-border-subtle/50 pt-2">
-                <span className="text-[10px] text-text-muted font-bold uppercase tracking-wide">Citation Source</span>
-                <p className="font-bold text-text-main mt-0.5 truncate">{road.citation || "N/A"}</p>
+              <div>
+                <span className="text-[9px] text-text-muted font-bold uppercase tracking-wider">First / Latest Spent</span>
+                <p className="font-bold text-text-main mt-0.5 text-[11px]">{road.firstSpent || "N/A"} / {road.latestSpent || "N/A"}</p>
               </div>
+            </div>
 
+            <div className="border-t border-border-subtle/50 pt-2 flex items-center justify-between">
+              <div className="min-w-0">
+                <span className="text-[9px] text-text-muted font-bold uppercase tracking-wider">Citation Source</span>
+                <p className="font-bold text-text-main mt-0.5 truncate text-[10px]" title={road.citation}>{road.citation || "N/A"}</p>
+              </div>
               {road.grievanceUrl && (
-                <div className="border-t border-border-subtle/50 pt-2">
-                  <span className="text-[10px] text-text-muted font-bold uppercase tracking-wide">Verification Link</span>
-                  <div className="mt-1">
-                    <a 
-                      href={road.grievanceUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-primary hover:underline font-semibold break-all"
-                    >
-                      Official Grievance Portal →
-                    </a>
-                  </div>
-                </div>
+                <a 
+                  href={road.grievanceUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-primary hover:underline font-bold text-[10px] flex items-center gap-1 shrink-0"
+                >
+                  Official Portal →
+                </a>
               )}
             </div>
           </div>
+
         </div>
+      </div>
+
+      {/* Bottom Action Section */}
+      <div className="mt-1.5 flex justify-center shrink-0">
+        <button
+          onClick={onRaiseComplaint}
+          className="px-8 py-2 rounded-xl text-white font-bold text-xs md:text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 transition-all active:scale-[0.98]"
+        >
+          <AlertTriangle size={15} />
+          Raise Complaint
+        </button>
       </div>
     </motion.div>
   );
@@ -277,6 +273,7 @@ export default function MapPage() {
   const navigate = useNavigate();
   const { darkMode, toggleDarkMode, selectedRoad, setSelectedRoad, clearSelectedRoad } = useAppStore();
   const mapRef = useRef(null);
+  const [authError, setAuthError] = useState(false);
 
   const isDark = darkMode;
 
@@ -287,6 +284,15 @@ export default function MapPage() {
     id: "google-map-script",
     googleMapsApiKey: isPlaceholder ? '' : apiKey,
   });
+
+  // Detect Google Maps auth/billing failures via the global callback
+  useEffect(() => {
+    window.gm_authFailure = () => {
+      console.error('Google Maps authentication failed — billing may not be enabled on the Cloud project.');
+      setAuthError(true);
+    };
+    return () => { delete window.gm_authFailure; };
+  }, []);
 
   const onMapLoad = useCallback((map) => { mapRef.current = map; }, []);
 
@@ -359,74 +365,112 @@ export default function MapPage() {
     [isDark]
   );
 
-  if (loadError) {
+  // Unified fallback: show interactive road list when Maps can't render
+  const showFallback = isPlaceholder || !!loadError || authError;
+
+  if (showFallback) {
+    // Determine why we're showing the fallback
+    const isBillingOrAuth = authError || !!loadError;
+    const isKeyMissing = isPlaceholder;
+
     return (
-      <div className="w-full h-[calc(100vh-4rem)] flex items-center justify-center bg-slate-900 px-6">
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center mx-auto mb-4">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
+      <div className="relative h-[calc(100vh-4rem)] w-full overflow-hidden bg-bg-base">
+        <PageContainer className="flex flex-col items-center justify-center py-8">
+          <div className="text-center max-w-2xl w-full">
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm ${
+              isBillingOrAuth ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-primary/5 border border-primary/10'
+            }`}>
+              {isBillingOrAuth
+                ? <AlertTriangle size={30} className="text-amber-500" />
+                : <Navigation2 size={30} className="text-primary" />
+              }
+            </div>
+
+            <h1 className="text-2xl font-bold text-text-main mb-2 tracking-tight">Infrastructure Map</h1>
+
+            {isKeyMissing && (
+              <>
+                <p className="text-text-muted font-medium max-w-lg mx-auto leading-relaxed mb-4 text-sm">
+                  Connect your Google Maps API key to enable live road monitoring.
+                </p>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 mb-6 text-[11px] font-semibold text-primary uppercase tracking-wider">
+                  <Layers size={14} />
+                  Setup Required: VITE_GOOGLE_MAPS_API_KEY
+                </div>
+              </>
+            )}
+
+            {isBillingOrAuth && (
+              <>
+                <p className="text-text-muted font-medium max-w-lg mx-auto leading-relaxed mb-2 text-sm">
+                  Google Maps could not authenticate. This usually means billing is not enabled on the Google Cloud project, or the API key has domain restrictions.
+                </p>
+                <p className="text-text-muted/70 text-xs max-w-md mx-auto mb-4">
+                  Enable billing at <a href="https://console.cloud.google.com/billing" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">console.cloud.google.com/billing</a> and ensure the Maps JavaScript API is enabled.
+                </p>
+                {loadError && (
+                  <p className="text-text-muted/50 text-[10px] mb-4 break-all">{loadError.message}</p>
+                )}
+              </>
+            )}
+
+            <Card className="p-0 overflow-hidden text-left shadow-md" hover={false}>
+              <div className="px-6 py-3 border-b border-border-subtle bg-slate-50/50 backdrop-blur-sm flex items-center justify-between dark:bg-slate-800/50">
+                <SectionHeader title="Infrastructure Inventory" className="mb-0" />
+                <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">{roads.length} Segments · Click to inspect</span>
+              </div>
+              <div className="max-h-[400px] overflow-y-auto divide-y divide-border-subtle scrollbar-hide">
+                {roads.map((road) => {
+                  const cfg = getSeverity(road.complaints);
+                  const isSelected = selectedRoad?.id === road.id;
+                  return (
+                    <div
+                      key={road.id}
+                      onClick={() => handleRoadSelect(road)}
+                      className={`group flex items-center justify-between py-3.5 px-6 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-primary/5 dark:bg-primary/10'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0 pr-4">
+                        <p className={`text-sm font-bold transition-colors truncate ${
+                          isSelected ? 'text-primary' : 'text-text-main group-hover:text-primary'
+                        }`}>{road.name}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <MapPin size={10} className="text-text-muted opacity-60" />
+                          <p className="text-[10px] font-medium text-text-muted truncate">{road.area || "Mumbai"}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="px-3 py-1 rounded-full text-[10px] font-bold border transition-transform group-hover:scale-105"
+                          style={{ background: cfg.bgColor, color: cfg.hex, borderColor: `${cfg.hex}20` }}>
+                          {cfg.label} ({road.complaints})
+                        </div>
+                        <ChevronRight size={16} className={`transition-all ${
+                          isSelected ? 'text-primary' : 'text-slate-300 group-hover:text-primary'
+                        }`} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
           </div>
-          <p className="text-red-400 font-bold text-sm uppercase tracking-widest mb-2">Map failed to load</p>
-          <p className="text-slate-400 text-xs">Check your API key in <code className="text-amber-400">.env</code></p>
-          <p className="text-slate-500 text-[10px] mt-2 break-all">{loadError.message}</p>
-        </div>
+        </PageContainer>
+
+        {/* BottomSheet still works in fallback mode */}
+        <AnimatePresence>
+          {selectedRoad && (
+            <BottomSheet
+              road={selectedRoad}
+              onClose={() => clearSelectedRoad()}
+              onRaiseComplaint={handleRaiseComplaint}
+              isDark={isDark}
+            />
+          )}
+        </AnimatePresence>
       </div>
-    );
-  }
-
-  if (isPlaceholder) {
-    return (
-      <PageContainer className="flex flex-col items-center justify-center py-12">
-        <div className="text-center max-w-2xl w-full">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-sm bg-primary/5 border border-primary/10">
-            <Navigation2 size={36} className="text-primary" />
-          </div>
-          
-          <h1 className="text-3xl font-bold text-text-main mb-3 tracking-tight">Interactive Map</h1>
-          <p className="text-text-muted font-medium max-w-lg mx-auto leading-relaxed mb-8">
-            Connect your Google Maps API key to enable live road monitoring and infrastructure analysis.
-          </p>
-
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 mb-10 text-[11px] font-semibold text-primary uppercase tracking-wider">
-            <Layers size={14} />
-            Setup Required: VITE_GOOGLE_MAPS_API_KEY
-          </div>
-
-          <Card className="p-0 overflow-hidden text-left shadow-md" hover={false}>
-            <div className="px-6 py-4 border-b border-border-subtle bg-slate-50/50 backdrop-blur-sm flex items-center justify-between dark:bg-slate-800/50">
-              <SectionHeader title="Infrastructure Inventory" className="mb-0" />
-              <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">{roads.length} Segments Identified</span>
-            </div>
-            <div className="max-h-[400px] overflow-y-auto divide-y divide-border-subtle scrollbar-hide">
-              {roads.map((road) => {
-                const cfg = getSeverity(road.complaints);
-                return (
-                  <div key={road.id} className="group flex items-center justify-between py-4 px-6 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-default">
-                    <div className="flex-1 min-w-0 pr-4">
-                      <p className="text-sm font-bold text-text-main group-hover:text-primary transition-colors truncate">{road.name}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <MapPin size={10} className="text-text-muted opacity-60" />
-                        <p className="text-[10px] font-medium text-text-muted truncate">{road.area || "Mumbai"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="px-3 py-1 rounded-full text-[10px] font-bold border transition-transform group-hover:scale-105"
-                        style={{ background: cfg.bgColor, color: cfg.hex, borderColor: `${cfg.hex}20` }}>
-                        {cfg.label} ({road.complaints})
-                      </div>
-                      <ChevronRight size={16} className="text-slate-300 group-hover:text-primary transition-all" />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        </div>
-      </PageContainer>
     );
   }
 

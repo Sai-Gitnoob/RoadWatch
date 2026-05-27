@@ -12,14 +12,10 @@ export default function ProtectedRoute({ children }) {
   if (!isAuthenticated && !token) {
     return <Navigate to="/login" replace />;
   }
-<<<<<<< HEAD
-  */
-=======
-
-  if (currentUser && currentUser.role === 'admin') {
-    return <Navigate to="/admin" replace />;
-  }
->>>>>>> 2d8e85987b77b2aa276cd432e2af63d76fb19ff2
+*/
+if (currentUser && currentUser.role === 'admin') {
+  return <Navigate to="/admin" replace />;
+}
   
   return (
     <div className="w-full max-w-6xl min-h-screen bg-bg-base flex flex-col relative">
