@@ -1,4 +1,10 @@
 const { db } = require("../config/firebase");
+const Airtable = require("airtable");
+
+let base;
+if (process.env.AIRTABLE_TOKEN && process.env.AIRTABLE_BASE_ID) {
+  base = new Airtable({ apiKey: process.env.AIRTABLE_TOKEN }).base(process.env.AIRTABLE_BASE_ID);
+}
 
 
 // CREATE COMPLAINT
@@ -32,12 +38,18 @@ const createComplaint = async (req, res) => {
 
     // Complaint Object
     const complaint = {
-      userId: userId,
-      description: data.description.trim(),
+      ticketId: data.ticketId || `c-${Date.now()}`,
+      roadName: data.roadName || data.location?.split(",")[0] || "Unknown Road",
+      userId: (data.user && data.user.uid) || (req.user && req.user.uid) || null,
+      description: data.description,
       location: data.location,
+      latitude: data.lat || data.latitude || null,
+      longitude: data.lng || data.longitude || null,
+      city: data.city || "Mumbai",
       issueType: data.issueType || "General",
       severity: data.severity || "medium",
-      status: "pending",
+      status: data.status || "pending",
+      source: data.source || "manual",
       createdAt: new Date(),
     };
 
@@ -69,12 +81,29 @@ const createComplaint = async (req, res) => {
 const getComplaints = async (req, res) => {
   try {
 
-    const snapshot = await db.collection("complaints").get();
+    let snapshot;
+    if (req.user.role === "admin") {
+      snapshot = await db.collection("complaints").get();
+    } else {
+      snapshot = await db
+        .collection("complaints")
+        .where("userId", "==", req.user.uid)
+        .get();
+    }
 
-    const complaints = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const complaints = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      // Handle Firestore Timestamps uniformly
+      ['createdAt', 'updatedAt', 'assignedAt', 'inProgressAt', 'resolvedAt'].forEach(field => {
+        if (data[field] && typeof data[field].toDate === 'function') {
+          data[field] = data[field].toDate().toISOString();
+        }
+      });
+      return {
+        id: doc.id,
+        ...data,
+      };
+    });
 
     res.status(200).json({
       success: true,
@@ -110,11 +139,18 @@ const getComplaintById = async (req, res) => {
       });
     }
 
+    const data = doc.data();
+    ['createdAt', 'updatedAt', 'assignedAt', 'inProgressAt', 'resolvedAt'].forEach(field => {
+      if (data[field] && typeof data[field].toDate === 'function') {
+        data[field] = data[field].toDate().toISOString();
+      }
+    });
+
     res.status(200).json({
       success: true,
       data: {
         id: doc.id,
-        ...doc.data(),
+        ...data,
       },
     });
 
@@ -140,6 +176,7 @@ const updateComplaintStatus = async (req, res) => {
     // Allowed status values
     const allowedStatus = [
       "pending",
+      "assigned",
       "in-progress",
       "resolved",
     ];
@@ -164,11 +201,58 @@ const updateComplaintStatus = async (req, res) => {
       });
     }
 
-    // Update status
-    await complaintRef.update({
+    const currentData = doc.data();
+    const currentStatus = currentData.status || "pending";
+
+    // Strict One-Way Status Flow Validation
+    if (currentStatus === "resolved") {
+      return res.status(400).json({ success: false, message: "Complaint is already resolved and immutable" });
+    }
+    
+    if (status === "assigned" && currentStatus !== "pending") {
+      return res.status(400).json({ success: false, message: "Can only mark assigned from pending" });
+    }
+    if (status === "in-progress" && currentStatus !== "assigned") {
+      return res.status(400).json({ success: false, message: "Can only mark in-progress from assigned" });
+    }
+    if (status === "resolved" && currentStatus !== "in-progress") {
+      return res.status(400).json({ success: false, message: "Can only mark resolved from in-progress" });
+    }
+
+    // Update status with timeline timestamps
+    const updateData = {
       status,
       updatedAt: new Date(),
-    });
+    };
+    
+    if (status === "assigned") updateData.assignedAt = new Date();
+    if (status === "in-progress") updateData.inProgressAt = new Date();
+    if (status === "resolved") updateData.resolvedAt = new Date();
+
+    await complaintRef.update(updateData);
+
+    // Sync status to Airtable if configured
+    if (base && currentData.ticketId) {
+      try {
+        const tableName = process.env.AIRTABLE_TABLE_NAME || "Issues";
+        const records = await base(tableName).select({
+          filterByFormula: `{ticket_id} = '${currentData.ticketId}'`,
+          maxRecords: 1
+        }).firstPage();
+
+        if (records && records.length > 0) {
+          const recordId = records[0].id;
+          await base(tableName).update(recordId, {
+            status: status
+          });
+          console.log(`Successfully synced status ${status} to Airtable for ticket ${currentData.ticketId}`);
+        } else {
+          console.warn(`Airtable sync warning: No record found with ticket_id = ${currentData.ticketId}`);
+        }
+      } catch (airtableErr) {
+        console.error("Failed to sync status to Airtable:", airtableErr);
+      }
+    }
 
     res.status(200).json({
       success: true,

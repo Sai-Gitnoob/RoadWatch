@@ -13,6 +13,13 @@ const createUser = async (userData) => {
     password,
   } = userData;
 
+  if (
+    email === process.env.ADMIN_EMAIL_1 ||
+    email === process.env.ADMIN_EMAIL_2
+  ) {
+    throw new Error("Cannot use an admin email to sign up");
+  }
+
   // Check if user already exists
   const existingUser = await db
     .collection("users")
@@ -54,6 +61,20 @@ const createUser = async (userData) => {
 
 
 const loginUser = async (email, password) => {
+
+  // Admin Check
+  if (
+    (email === process.env.ADMIN_EMAIL_1 && password === process.env.ADMIN_PASSWORD_1) ||
+    (email === process.env.ADMIN_EMAIL_2 && password === process.env.ADMIN_PASSWORD_2)
+  ) {
+    return {
+      id: `admin-${email.split(".")[0]}`,
+      uid: `admin-${email.split(".")[0]}`,
+      name: email.split(".")[0] + " Admin",
+      email: email,
+      role: "admin",
+    };
+  }
 
   // Find user by email
   const snapshot = await db

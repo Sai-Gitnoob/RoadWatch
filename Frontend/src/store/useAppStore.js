@@ -1,13 +1,53 @@
 import { create } from 'zustand';
+import { complaintService } from '../services/complaintService';
 
 const useAppStore = create((set) => ({
   // Auth
-  currentUser: {
-    uid: 'demo-user-001',
-    name: 'Saloni Gurav',
-    email: 'saloni@roadwatch.in',
-    avatar: null,
-    joinedDate: '2024-10-01',
+  currentUser: JSON.parse(sessionStorage.getItem('roadwatch-user') || 'null'),
+  token: sessionStorage.getItem('roadwatch-token') || null,
+  isAuthenticated: !!sessionStorage.getItem('roadwatch-token'),
+  
+  login: (userData, token) => {
+    sessionStorage.setItem('roadwatch-token', token);
+    if (userData) {
+      sessionStorage.setItem('roadwatch-user', JSON.stringify(userData));
+    }
+    const userChatKey = `roadwatch-chat-history-${userData?.uid || 'default'}`;
+    let loadedChat = [];
+    try {
+      const saved = sessionStorage.getItem(userChatKey);
+      if (saved) loadedChat = JSON.parse(saved);
+    } catch (e) {}
+
+    set({
+      currentUser: userData,
+      token: token,
+      isAuthenticated: true,
+      chatMessages: loadedChat
+    });
+  },
+  
+  logout: () => {
+    sessionStorage.removeItem('roadwatch-token');
+    sessionStorage.removeItem('roadwatch-user');
+    set({
+      currentUser: null,
+      token: null,
+      isAuthenticated: false,
+      chatMessages: [],
+      complaints: [],
+      selectedRoad: null
+    });
+  },
+  
+  setCurrentUser: (userData) => {
+    const userChatKey = `roadwatch-chat-history-${userData?.uid || 'default'}`;
+    let loadedChat = [];
+    try {
+      const saved = sessionStorage.getItem(userChatKey);
+      if (saved) loadedChat = JSON.parse(saved);
+    } catch (e) {}
+    set({ currentUser: userData, chatMessages: loadedChat });
   },
 
   // Map state
@@ -17,16 +57,42 @@ const useAppStore = create((set) => ({
 
   // Complaints
   complaints: [],
+  setComplaints: (complaints) => set({ complaints }),
+  fetchComplaints: async () => {
+    const state = useAppStore.getState();
+    if (!state.token) return;
+    try {
+      const response = await complaintService.getComplaints(state.token);
+      if (response.success) {
+        // Sort newest first
+        const sorted = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        set({ complaints: sorted });
+      }
+    } catch (error) {
+      console.error("Failed to fetch complaints:", error);
+    }
+  },
   addComplaint: (complaint) =>
     set((state) => ({ complaints: [complaint, ...state.complaints] })),
 
   // Chat history
   chatMessages: [],
   addChatMessage: (msg) =>
-    set((state) => ({
-      chatMessages: [...state.chatMessages, msg].slice(-50),
-    })),
-  clearChat: () => set({ chatMessages: [] }),
+    set((state) => {
+      const newMessages = [...state.chatMessages, msg].slice(-50);
+      try {
+        const userChatKey = `roadwatch-chat-history-${state.currentUser?.uid || 'default'}`;
+        sessionStorage.setItem(userChatKey, JSON.stringify(newMessages));
+      } catch (e) {
+        console.error("Could not save chat history to sessionStorage", e);
+      }
+      return { chatMessages: newMessages };
+    }),
+  clearChat: () => set((state) => {
+    const userChatKey = `roadwatch-chat-history-${state.currentUser?.uid || 'default'}`;
+    sessionStorage.removeItem(userChatKey);
+    return { chatMessages: [] };
+  }),
 
   // Notification
   notification: null,

@@ -7,6 +7,7 @@ import { mumbaiRoads, conditionConfig, mumbaiCenter } from '../data/mumbaiRoads'
 import useAppStore from '../store/useAppStore';
 import { PageContainer } from '../components/layout/PageContainer';
 import { Card, SectionHeader, PageHeader } from '../components/ui';
+import { ErrorBoundary } from 'react-error-boundary';
 
 const mapStyles = [
   { featureType: 'all', elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
@@ -135,56 +136,60 @@ export default function MapPage() {
     clearSelectedRoad();
   };
 
-  if (isPlaceholder) {
-    return (
-      <PageContainer className="flex flex-col items-center justify-center py-12">
-        <div className="text-center max-w-2xl w-full">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-sm bg-primary/5 border border-primary/10">
-            <Navigation2 size={36} className="text-primary" />
-          </div>
-          
-          <h1 className="text-3xl font-bold text-text-main mb-3 tracking-tight">Interactive Map</h1>
-          <p className="text-text-muted font-medium max-w-lg mx-auto leading-relaxed mb-8">
-            Connect your Google Maps API key to enable live road monitoring and infrastructure analysis.
-          </p>
+  const PlaceholderView = ({ error }) => (
+    <PageContainer className="flex flex-col items-center justify-center py-12">
+      <div className="text-center max-w-2xl w-full">
+        <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-sm bg-primary/5 border border-primary/10">
+          <Navigation2 size={36} className="text-primary" />
+        </div>
+        
+        <h1 className="text-3xl font-bold text-text-main mb-3 tracking-tight">Interactive Map</h1>
+        <p className="text-text-muted font-medium max-w-lg mx-auto leading-relaxed mb-8">
+          {error 
+            ? "Map failed to load. This usually happens if the Google Maps API quota is exceeded."
+            : "Connect your Google Maps API key to enable live road monitoring and infrastructure analysis."}
+        </p>
 
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 mb-10 text-[11px] font-semibold text-primary uppercase tracking-wider">
-            <Layers size={14} />
-            Setup Required: VITE_GOOGLE_MAPS_API_KEY
-          </div>
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 mb-10 text-[11px] font-semibold text-primary uppercase tracking-wider">
+          <Layers size={14} />
+          {error ? "API Quota Exceeded / Error" : "Setup Required: VITE_GOOGLE_MAPS_API_KEY"}
+        </div>
 
-          <Card className="p-0 overflow-hidden text-left shadow-md" hover={false}>
-            <div className="px-6 py-4 border-b border-border-subtle bg-slate-50/50 backdrop-blur-sm flex items-center justify-between">
-              <SectionHeader title="Infrastructure Inventory" className="mb-0" />
-              <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">{mumbaiRoads.length} Segments Identified</span>
-            </div>
-            <div className="max-h-[400px] overflow-y-auto divide-y divide-border-subtle scrollbar-hide">
-              {mumbaiRoads.map((road) => {
-                const cfg = conditionConfig[road.condition];
-                return (
-                  <div key={road.id} className="group flex items-center justify-between py-4 px-6 hover:bg-slate-50 transition-all cursor-default">
-                    <div className="flex-1 min-w-0 pr-4">
-                      <p className="text-sm font-bold text-text-main group-hover:text-primary transition-colors truncate">{road.name}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <MapPin size={10} className="text-text-muted opacity-60" />
-                        <p className="text-[10px] font-medium text-text-muted truncate">{road.from} → {road.to}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="px-3 py-1 rounded-full text-[10px] font-bold border transition-transform group-hover:scale-105"
-                        style={{ background: `${cfg.hex}10`, color: cfg.hex, borderColor: `${cfg.hex}20` }}>
-                        Score {road.score}
-                      </div>
-                      <ChevronRight size={16} className="text-slate-300 group-hover:text-primary transition-all" />
+        <Card className="p-0 overflow-hidden text-left shadow-md" hover={false}>
+          <div className="px-6 py-4 border-b border-border-subtle bg-slate-50/50 backdrop-blur-sm flex items-center justify-between">
+            <SectionHeader title="Infrastructure Inventory" className="mb-0" />
+            <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">{mumbaiRoads.length} Segments Identified</span>
+          </div>
+          <div className="max-h-[400px] overflow-y-auto divide-y divide-border-subtle scrollbar-hide">
+            {mumbaiRoads.map((road) => {
+              const cfg = conditionConfig[road.condition];
+              return (
+                <div key={road.id} className="group flex items-center justify-between py-4 px-6 hover:bg-slate-50 transition-all cursor-default">
+                  <div className="flex-1 min-w-0 pr-4">
+                    <p className="text-sm font-bold text-text-main group-hover:text-primary transition-colors truncate">{road.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <MapPin size={10} className="text-text-muted opacity-60" />
+                      <p className="text-[10px] font-medium text-text-muted truncate">{road.from} → {road.to}</p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </Card>
-        </div>
-      </PageContainer>
-    );
+                  <div className="flex items-center gap-4">
+                    <div className="px-3 py-1 rounded-full text-[10px] font-bold border transition-transform group-hover:scale-105"
+                      style={{ background: `${cfg.hex}10`, color: cfg.hex, borderColor: `${cfg.hex}20` }}>
+                      Score {road.score}
+                    </div>
+                    <ChevronRight size={16} className="text-slate-300 group-hover:text-primary transition-all" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      </div>
+    </PageContainer>
+  );
+
+  if (isPlaceholder) {
+    return <PlaceholderView />;
   }
 
   if (!isLoaded) {
@@ -200,57 +205,58 @@ export default function MapPage() {
 
   return (
     <div className="relative h-[calc(100vh-4rem)] overflow-hidden bg-bg-base">
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={mumbaiCenter}
-        zoom={12}
-        options={options}
-        onLoad={onMapLoad}
-        onClick={clearSelectedRoad}
-      >
-        {mumbaiRoads.map((road) => {
-          const cfg = conditionConfig[road.condition];
-          const isSelected = selectedRoad?.id === road.id;
-          return (
-            <React.Fragment key={road.id}>
-              {/* Glow effect */}
-              <Polyline
-                path={road.path}
-                options={{
-                  strokeColor: cfg.hex,
-                  strokeOpacity: isSelected ? 0.4 : 0.15,
-                  strokeWeight: isSelected ? 16 : 10,
-                  strokeLineCap: 'round',
-                  strokeLineJoin: 'round',
-                  zIndex: isSelected ? 9 : 0,
-                  clickable: false,
-                }}
-              />
-              {/* Main line */}
-              <Polyline
-                path={road.path}
-                options={{
-                  strokeColor: cfg.hex,
-                  strokeOpacity: isSelected ? 1 : 0.8,
-                  strokeWeight: isSelected ? 6 : 4,
-                  strokeLineCap: 'round',
-                  strokeLineJoin: 'round',
-                  zIndex: isSelected ? 10 : 1,
-                }}
-                onClick={() => setSelectedRoad(road)}
-              />
-            </React.Fragment>
-          );
-        })}
+      <ErrorBoundary fallback={<PlaceholderView error={true} />}>
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={mumbaiCenter}
+          zoom={12}
+          options={options}
+          onLoad={onMapLoad}
+          onClick={clearSelectedRoad}
+        >
+          {mumbaiRoads.map((road) => {
+            const cfg = conditionConfig[road.condition];
+            const isSelected = selectedRoad?.id === road.id;
+            return (
+              <React.Fragment key={road.id}>
+                {/* Glow effect */}
+                <Polyline
+                  path={road.path}
+                  options={{
+                    strokeColor: cfg.hex,
+                    strokeOpacity: isSelected ? 0.4 : 0.15,
+                    strokeWeight: isSelected ? 16 : 10,
+                    strokeLineCap: 'round',
+                    strokeLineJoin: 'round',
+                    zIndex: isSelected ? 9 : 0,
+                    clickable: false,
+                  }}
+                />
+                {/* Main line */}
+                <Polyline
+                  path={road.path}
+                  options={{
+                    strokeColor: cfg.hex,
+                    strokeOpacity: isSelected ? 1 : 0.8,
+                    strokeWeight: isSelected ? 6 : 4,
+                    strokeLineCap: 'round',
+                    strokeLineJoin: 'round',
+                    zIndex: isSelected ? 10 : 1,
+                  }}
+                  onClick={() => setSelectedRoad(road)}
+                />
+              </React.Fragment>
+            );
+          })}
 
-        {selectedRoad && (
-          <Marker
-            position={selectedRoad.path[Math.floor(selectedRoad.path.length / 2)]}
-            options={{ icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: 'var(--color-primary)', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 } }}
-          />
-        )}
-      </GoogleMap>
-
+          {selectedRoad && (
+            <Marker
+              position={selectedRoad.path[Math.floor(selectedRoad.path.length / 2)]}
+              options={{ icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: 'var(--color-primary)', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 } }}
+            />
+          )}
+        </GoogleMap>
+      </ErrorBoundary>
 
       <Legend />
 

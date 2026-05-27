@@ -21,7 +21,7 @@ router.post("/", protect, createComplaint);
 
 // GET ALL COMPLAINTS
 // GET /api/complaints
-router.get("/", getComplaints);
+router.get("/", protect, getComplaints);
 
 
 // GET SINGLE COMPLAINT

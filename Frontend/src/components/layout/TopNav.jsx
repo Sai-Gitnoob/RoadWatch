@@ -60,7 +60,7 @@ export default function TopNav() {
 
           <NavLink to="/account" className="flex items-center gap-3 pl-4 border-l border-border-subtle group">
             <div className="hidden lg:block text-right">
-              <p className="text-xs font-semibold text-text-main">{currentUser.name}</p>
+              <p className="text-xs font-semibold text-text-main">{currentUser?.name || 'Loading...'}</p>
               <p className="text-[10px] font-medium text-text-muted">Mumbai Resident</p>
             </div>
             <div className="relative">
@@ -69,7 +69,7 @@ export default function TopNav() {
                 whileTap={{ scale: 0.95 }}
                 className="w-9 h-9 rounded-full flex items-center justify-center bg-primary text-white font-bold text-sm shadow-sm border-2 border-bg-surface"
               >
-                {currentUser.name.charAt(0)}
+                {(currentUser?.name || 'U').charAt(0)}
               </motion.div>
             </div>
           </NavLink>
