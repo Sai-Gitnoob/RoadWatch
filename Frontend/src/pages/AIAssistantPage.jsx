@@ -10,10 +10,10 @@ import FormattedBotResponse from '../components/ui/FormattedBotResponse';
 import { complaintService } from '../services/complaintService';
 
 const SUGGESTED_QUERIES = [
-  { text: 'Analyze road health in Andheri West', icon: Search },
-  { text: 'Predict monsoon waterlogging zones', icon: Zap },
-  { text: 'Status of critical pothole repairs', icon: Shield },
-  { text: 'Summarize recent citizen feedback', icon: MessageSquare },
+  { text: 'Eg: File complaint for road crack issue on JVLR Road ', icon: Zap },
+  { text: 'Track my complaint using ticket ID', icon: Search },
+  { text: 'Road condition of LBS Marg', icon: Shield },
+  { text: 'Give me Road Details of Aarey Road ', icon: MessageSquare },
 ];
 
 function ChatBubble({ message, onSend }) {
