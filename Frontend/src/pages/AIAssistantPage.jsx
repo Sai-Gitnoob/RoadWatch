@@ -111,12 +111,23 @@ export default function AIAssistantPage() {
       const payload = {
         message: contextPayload,
         history: historyPayload,
+        ticketId: `c-${Date.now()}`,
+        source: 'ai',
+        status: 'pending',
+        issueType: '',
+        severity: '',
         user: {
           uid: currentUser?.uid || "Anonymous",
+          userId: currentUser?.uid || "Anonymous",
           name: currentUser?.name || "Anonymous",
+          username: currentUser?.name || "Anonymous",
           email: currentUser?.email || "No Email"
         },
-        location: locationData
+        location: {
+          latitude: locationData.lat,
+          longitude: locationData.lng,
+          City: 'MUMBAI'
+        }
       };
 
       const controller = new AbortController();
@@ -183,7 +194,10 @@ export default function AIAssistantPage() {
               issueType: issueType || 'Other',
               severity: 'medium',
               status: 'pending',
-              source: 'ai'
+              source: 'ai',
+              lat: locationData.lat,
+              lng: locationData.lng,
+              city: 'Mumbai'
             }, token);
 
             // Instantly fetch all updated complaints to reflect on the dashboard

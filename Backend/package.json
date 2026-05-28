@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/Saloni967/RoadWatch#readme",
   "dependencies": {
+    "airtable": "^0.12.2",
     "axios": "^1.15.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",

@@ -1,4 +1,10 @@
 const { db } = require("../config/firebase");
+const Airtable = require("airtable");
+
+let base;
+if (process.env.AIRTABLE_TOKEN && process.env.AIRTABLE_BASE_ID) {
+  base = new Airtable({ apiKey: process.env.AIRTABLE_TOKEN }).base(process.env.AIRTABLE_BASE_ID);
+}
 
 
 // CREATE COMPLAINT
@@ -7,8 +13,23 @@ const createComplaint = async (req, res) => {
 
     const data = req.body;
 
+    // Get logged-in user from JWT middleware
+    const userId = req.user?.id;
+
+    // Check authentication
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized user",
+      });
+    }
+
     // Validation
-    if (!data.description || !data.location) {
+    if (
+      !data.description ||
+      !data.description.trim() ||
+      !data.location
+    ) {
       return res.status(400).json({
         success: false,
         message: "Description and location are required",
@@ -22,6 +43,9 @@ const createComplaint = async (req, res) => {
       userId: (data.user && data.user.uid) || (req.user && req.user.uid) || null,
       description: data.description,
       location: data.location,
+      latitude: data.lat || data.latitude || null,
+      longitude: data.lng || data.longitude || null,
+      city: data.city || "Mumbai",
       issueType: data.issueType || "General",
       severity: data.severity || "medium",
       status: data.status || "pending",
@@ -206,6 +230,29 @@ const updateComplaintStatus = async (req, res) => {
     if (status === "resolved") updateData.resolvedAt = new Date();
 
     await complaintRef.update(updateData);
+
+    // Sync status to Airtable if configured
+    if (base && currentData.ticketId) {
+      try {
+        const tableName = process.env.AIRTABLE_TABLE_NAME || "Issues";
+        const records = await base(tableName).select({
+          filterByFormula: `{ticket_id} = '${currentData.ticketId}'`,
+          maxRecords: 1
+        }).firstPage();
+
+        if (records && records.length > 0) {
+          const recordId = records[0].id;
+          await base(tableName).update(recordId, {
+            status: status
+          });
+          console.log(`Successfully synced status ${status} to Airtable for ticket ${currentData.ticketId}`);
+        } else {
+          console.warn(`Airtable sync warning: No record found with ticket_id = ${currentData.ticketId}`);
+        }
+      } catch (airtableErr) {
+        console.error("Failed to sync status to Airtable:", airtableErr);
+      }
+    }
 
     res.status(200).json({
       success: true,

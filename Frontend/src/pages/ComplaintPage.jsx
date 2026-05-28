@@ -34,8 +34,31 @@ function ManualForm({ prefillRoad }) {
     description: '',
     severity: '',
   });
+  const [locationData, setLocationData] = useState({
+    lat: prefillRoad?.path?.[0]?.lat || null,
+    lng: prefillRoad?.path?.[0]?.lng || null,
+  });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (!prefillRoad && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocationData({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.warn("Geolocation denied or error:", error);
+          setLocationData({ lat: 19.0760, lng: 72.8777 }); // Fallback to Mumbai center
+        }
+      );
+    } else if (!prefillRoad) {
+      setLocationData({ lat: 19.0760, lng: 72.8777 });
+    }
+  }, [prefillRoad]);
 
   const validate = () => {
     const e = {};
@@ -64,12 +87,16 @@ function ManualForm({ prefillRoad }) {
         description: form.description || "No description provided.",
         severity: form.severity.charAt(0).toUpperCase() + form.severity.slice(1),
         location: `${form.roadName}, ${form.landmark}`,
-        lat: prefillRoad?.path?.[0]?.lat || 19.0760,
-        lng: prefillRoad?.path?.[0]?.lng || 72.8777,
+        lat: locationData.lat || 19.0760,
+        lng: locationData.lng || 72.8777,
         authority: prefillRoad?.authority || "BMC",
+        source: 'manual',
+        status: 'pending',
         user: {
           uid: currentUser.uid,
+          userId: currentUser.uid,
           name: currentUser.name || "Unknown",
+          username: currentUser.name || "Unknown",
           email: currentUser.email || "Unknown"
         }
       };
@@ -94,7 +121,10 @@ function ManualForm({ prefillRoad }) {
         issueType: payload.issue_type,
         severity: form.severity,
         status: 'pending',
-        source: 'manual'
+        source: 'manual',
+        lat: locationData.lat || 19.0760,
+        lng: locationData.lng || 72.8777,
+        city: 'Mumbai'
       }, token);
       
       // Refetch complaints from backend
