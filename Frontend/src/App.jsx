@@ -82,7 +82,20 @@ export default function App() {
       <div className="bg-bg-base min-h-screen w-full flex justify-center overflow-x-hidden">
         <Toast />
         <Routes>
-          <Route path="/" element={<Navigate to="/map" replace />} />
+          <Route
+  path="/"
+  element={
+    token ? (
+      currentUser?.role === 'admin' ? (
+        <Navigate to="/admin" replace />
+      ) : (
+        <Navigate to="/map" replace />
+      )
+    ) : (
+      <Navigate to="/login" replace />
+    )
+  }
+/>
           
           {/* Public Routes */}
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
