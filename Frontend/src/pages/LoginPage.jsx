@@ -122,6 +122,23 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      {/* Judge/Admin Access Notice */}
+      <div className="mt-5 bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+        <div className="text-yellow-600 text-xl">⚠️</div>
+
+      <div>
+         <h3 className="text-sm font-extrabold text-yellow-800 uppercase tracking-wide">
+        Access Information
+      </h3>
+
+      <p className="text-sm text-yellow-900 mt-1 leading-relaxed font-medium">
+         Admin login credentials are available in the PPT and Word Doc for acess to Admin Dashboard. 
+         <p>Demo User credentials are also provided For quick access.</p>
+      </p>
+    </div>
+  </div>
+</div>
     </div>
   );
 }

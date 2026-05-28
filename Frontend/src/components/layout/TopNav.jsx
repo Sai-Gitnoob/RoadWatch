@@ -7,8 +7,8 @@ import logoImg from '../../assets/logo.png';
 const navItems = [
   { to: '/map',       icon: Map,             label: 'Map'       },
   { to: '/complaint', icon: AlertCircle,     label: 'Complaint' },
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/ai',        icon: Bot,             label: 'AI Assistant' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/account',   icon: User,            label: 'Account'   },
 ];
 
