@@ -1,19 +1,17 @@
 const admin = require("firebase-admin");
-const path = require("path");
 
 
-// Load Firebase Service Account
-const serviceAccount = require(
-  path.join(__dirname, "../../serviceAccountKey.json")
-);
-
-if (serviceAccount.private_key) {
-  serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-}
+// Firebase Credentials from ENV
+const serviceAccount = {
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+};
 
 
-// Prevent Multiple Firebase Initializations
+// Prevent Multiple Initializations
 if (!admin.apps.length) {
+
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
